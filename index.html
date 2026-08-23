@@ -46,13 +46,15 @@ html, body {
 .screen.active { display: flex; }
 
 /* ---------------- Menu ---------------- */
-#screen-menu, #screen-howto, #screen-setup {
+#screen-menu, #screen-howto, #screen-setup, #screen-online {
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: 24px;
+  padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
+           max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
   position: relative;
+  overflow: hidden;
 }
 #bgCanvas {
   position: absolute; inset: 0;
@@ -64,6 +66,10 @@ html, body {
   z-index: 1;
   max-width: 460px;
   width: 100%;
+  max-height: calc(100vh - 32px);
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  padding: 4px;
 }
 .logo {
   font-size: clamp(2.2rem, 9vw, 3.4rem);
@@ -143,7 +149,8 @@ html, body {
   border: 1px solid var(--border);
   border-radius: 16px;
   padding: 24px;
-  max-height: 78vh;
+  max-height: calc(100vh - 32px);
+  max-height: calc(100dvh - 32px);
   overflow-y: auto;
   text-align: left;
 }
@@ -249,6 +256,74 @@ html, body {
 .item-icon-range { background: #f472b6; box-shadow: 0 0 10px rgba(244,114,182,0.6); }
 .item-icon-bomb { background: #38bdf8; box-shadow: 0 0 10px rgba(56,189,248,0.6); }
 .item-desc-row p { margin: 0; color: var(--ink-dim); font-size: 0.82rem; line-height: 1.5; }
+
+/* ---------------- Toggle switch (map feature on/off) ---------------- */
+.toggle-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 2px;
+  font-size: 0.85rem;
+  color: var(--ink);
+}
+.toggle-switch {
+  position: relative;
+  width: 46px; height: 26px;
+  border-radius: 999px;
+  border: 1.5px solid var(--border);
+  background: rgba(9,9,11,0.6);
+  padding: 0;
+  cursor: pointer;
+  flex: none;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.toggle-switch.on {
+  background: linear-gradient(160deg, rgba(168,85,247,0.65), rgba(124,58,237,0.6));
+  border-color: var(--primary);
+}
+.toggle-knob {
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 19px; height: 19px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+  transition: transform 0.15s ease;
+}
+.toggle-switch.on .toggle-knob { transform: translateX(20px); }
+
+/* ---------------- Online (P2P) screen ---------------- */
+.online-intro { margin-bottom: 18px; }
+.online-step { margin-bottom: 14px; }
+.online-step .menu-btn { margin: 6px 0; }
+.code-box {
+  width: 100%;
+  background: rgba(9,9,11,0.6);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  color: var(--accent-cyan);
+  font-family: 'Courier New', monospace;
+  font-size: 0.7rem;
+  padding: 10px;
+  resize: none;
+  word-break: break-all;
+  margin-bottom: 8px;
+}
+.code-box:focus { outline: none; border-color: var(--primary); }
+.online-status {
+  min-height: 1.2em;
+  font-size: 0.82rem;
+  color: var(--ink-dim);
+  text-align: center;
+  margin: 8px 0;
+}
+.online-status.ok { color: #4ade80; font-weight: 700; }
+.online-status.err { color: #f87171; font-weight: 700; }
+.online-note {
+  font-size: 0.76rem;
+  color: #f87171;
+  text-align: center;
+  margin: 10px 0;
+  line-height: 1.5;
+}
 
 /* ---------------- Game screen ---------------- */
 #screen-game { flex-direction: column; }
@@ -448,6 +523,20 @@ body:not(.touch-device) .desktop-hint { display: block; }
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-thumb { background: var(--primary-dim); border-radius: 4px; }
 
+/* Compact mode for short viewports (typical phone-in-landscape height, ~340–480px) —
+   tightens spacing on the pre-game screens so everything stays comfortably inside
+   the visible area with room to scroll rather than feeling cramped against the edges. */
+@media (max-height: 480px) {
+  .logo { font-size: clamp(1.6rem, 7vw, 2.2rem); }
+  .subtitle { margin: 4px 0 14px; }
+  .menu-btn { padding: 10px 16px; margin: 6px 0; }
+  .howto-card { padding: 16px; }
+  .howto-card h2 { margin-bottom: 8px; }
+  .howto-item { margin-bottom: 8px; }
+  .setup-group { margin-bottom: 12px; }
+  .item-desc-row { margin-bottom: 6px; }
+}
+
 </style>
 </head>
 <body>
@@ -467,6 +556,10 @@ body:not(.touch-device) .desktop-hint { display: block; }
         <span data-i18n="start">เริ่มศึกแบทเทิลรอยัล</span>
         <span class="sub" data-i18n="startSub">8–10 ผู้เล่น</span>
       </button>
+      <button class="menu-btn" id="onlineBtn">
+        <span data-i18n="onlineMenuBtn">เล่นออนไลน์กับเพื่อน (P2P)</span>
+        <span class="sub" data-i18n="onlineMenuBtnSub">ไม่ต้องมีเซิร์ฟเวอร์กลาง</span>
+      </button>
       <div class="menu-row">
         <button class="menu-btn" id="howtoBtn" data-i18n="howto">วิธีเล่น</button>
         <button class="menu-btn" id="musicBtn">
@@ -474,6 +567,48 @@ body:not(.touch-device) .desktop-hint { display: block; }
           <span class="sub" id="musicStateLabel">Off</span>
         </button>
       </div>
+    </div>
+  </section>
+
+  <!-- ============ ONLINE (P2P, manual signaling) ============ -->
+  <section id="screen-online" class="screen">
+    <div class="howto-card">
+      <h2 data-i18n="onlineTitle">เล่นออนไลน์กับเพื่อน</h2>
+      <p class="setup-desc online-intro" data-i18n="onlineIntro">เชื่อมต่อตรงระหว่างเบราว์เซอร์ 2 เครื่อง (P2P) ไม่มีเซิร์ฟเวอร์กลาง — แค่ส่งโค้ดสั้น ๆ ให้กันทางแชท</p>
+
+      <div id="onlineChoice" class="online-step">
+        <button class="menu-btn primary" id="onlineHostBtn" data-i18n="onlineCreateRoom">สร้างห้อง</button>
+        <button class="menu-btn" id="onlineJoinBtn" data-i18n="onlineJoinRoom">เข้าร่วมห้อง</button>
+      </div>
+
+      <div id="onlineHostPanel" class="online-step" style="display:none;">
+        <p class="setup-desc" data-i18n="onlineStep1">ขั้นที่ 1: คัดลอกโค้ดนี้ แล้วส่งให้เพื่อน</p>
+        <textarea id="hostOfferCode" class="code-box" readonly rows="3"></textarea>
+        <button class="menu-btn" id="copyOfferBtn" data-i18n="copyCode">คัดลอกโค้ด</button>
+        <p class="setup-desc" data-i18n="onlineStep2">ขั้นที่ 2: วางโค้ดตอบกลับจากเพื่อนตรงนี้</p>
+        <textarea id="hostAnswerInput" class="code-box" rows="3" data-i18n-placeholder="onlinePasteHere" placeholder="วางโค้ดจากเพื่อนที่นี่"></textarea>
+        <button class="menu-btn primary" id="hostConnectBtn" data-i18n="connectBtn">เชื่อมต่อ</button>
+        <p class="online-status" id="hostStatus"></p>
+        <div id="onlineHostStartRow" style="display:none;">
+          <button class="menu-btn primary" id="onlineHostProceedBtn" data-i18n="onlineSetupAndStart">ตั้งค่าและเริ่มเกม</button>
+        </div>
+      </div>
+
+      <div id="onlineGuestPanel" class="online-step" style="display:none;">
+        <p class="setup-desc" data-i18n="onlineGuestStep1">ขั้นที่ 1: วางโค้ดห้องจากเพื่อนตรงนี้</p>
+        <textarea id="guestOfferInput" class="code-box" rows="3" data-i18n-placeholder="onlinePasteHere" placeholder="วางโค้ดห้องที่นี่"></textarea>
+        <button class="menu-btn primary" id="guestGenAnswerBtn" data-i18n="onlineGenAnswer">สร้างโค้ดตอบกลับ</button>
+        <div id="onlineGuestStep2" style="display:none;">
+          <p class="setup-desc" data-i18n="onlineGuestStep2">ขั้นที่ 2: ส่งโค้ดนี้กลับให้เพื่อน</p>
+          <textarea id="guestAnswerCode" class="code-box" readonly rows="3"></textarea>
+          <button class="menu-btn" id="copyAnswerBtn" data-i18n="copyCode">คัดลอกโค้ด</button>
+        </div>
+        <p class="online-status" id="guestStatus"></p>
+      </div>
+
+      <p class="online-note" id="onlineUnsupportedNote" style="display:none;" data-i18n="onlineUnsupported">เบราว์เซอร์นี้ไม่รองรับการเชื่อมต่อ P2P (WebRTC) ลองเปิดผ่านเว็บโฮสต์ (https) แทนการเปิดไฟล์ตรง ๆ</p>
+
+      <button class="menu-btn" id="onlineBackBtn" data-i18n="back">กลับเมนูหลัก</button>
     </div>
   </section>
 
@@ -512,6 +647,18 @@ body:not(.touch-device) .desktop-hint { display: block; }
       <div class="setup-group">
         <h3 class="setup-label" data-i18n="colorTitle">สีตัวละครของคุณ</h3>
         <div class="color-row" id="colorRow"></div>
+      </div>
+
+      <div class="setup-group">
+        <h3 class="setup-label" data-i18n="mapFeaturesTitle">ฟีเจอร์แผนที่</h3>
+        <div class="toggle-row">
+          <span data-i18n="toggleWarp">จุดวาป (Warp Pipes)</span>
+          <button class="toggle-switch on" id="toggleWarpBtn" role="switch" aria-checked="true"><span class="toggle-knob"></span></button>
+        </div>
+        <div class="toggle-row">
+          <span data-i18n="toggleBelts">ทางเลื่อน (Conveyor Belts)</span>
+          <button class="toggle-switch on" id="toggleBeltsBtn" role="switch" aria-checked="true"><span class="toggle-knob"></span></button>
+        </div>
       </div>
 
       <button class="menu-btn primary" id="setupStartBtn" data-i18n="setupStart">เริ่มการต่อสู้</button>
@@ -652,7 +799,35 @@ const I18N = {
     diffHard: 'ยาก',
     playerCountTitle: 'จำนวนผู้เล่น',
     colorTitle: 'สีตัวละครของคุณ',
+    mapFeaturesTitle: 'ฟีเจอร์แผนที่',
+    toggleWarp: 'จุดวาป (Warp Pipes)',
+    toggleBelts: 'ทางเลื่อน (Conveyor Belts)',
     rotateMsg: 'กรุณาหมุนอุปกรณ์เป็นแนวนอนเพื่อเล่นเกม',
+    onlineMenuBtn: 'เล่นออนไลน์กับเพื่อน (P2P)',
+    onlineMenuBtnSub: 'ไม่ต้องมีเซิร์ฟเวอร์กลาง',
+    onlineTitle: 'เล่นออนไลน์กับเพื่อน',
+    onlineIntro: 'เชื่อมต่อตรงระหว่างเบราว์เซอร์ 2 เครื่อง (P2P) ไม่มีเซิร์ฟเวอร์กลาง — แค่ส่งโค้ดสั้น ๆ ให้กันทางแชท',
+    onlineCreateRoom: 'สร้างห้อง',
+    onlineJoinRoom: 'เข้าร่วมห้อง',
+    onlineStep1: 'ขั้นที่ 1: คัดลอกโค้ดนี้ แล้วส่งให้เพื่อน',
+    onlineStep2: 'ขั้นที่ 2: วางโค้ดตอบกลับจากเพื่อนตรงนี้',
+    copyCode: 'คัดลอกโค้ด',
+    connectBtn: 'เชื่อมต่อ',
+    onlinePasteHere: 'วางโค้ดที่นี่',
+    onlineGuestStep1: 'ขั้นที่ 1: วางโค้ดห้องจากเพื่อนตรงนี้',
+    onlineGenAnswer: 'สร้างโค้ดตอบกลับ',
+    onlineGuestStep2: 'ขั้นที่ 2: ส่งโค้ดนี้กลับให้เพื่อน',
+    onlineSetupAndStart: 'ตั้งค่าและเริ่มเกม',
+    onlineUnsupported: 'เบราว์เซอร์นี้ไม่รองรับการเชื่อมต่อ P2P (WebRTC) ลองเปิดผ่านเว็บโฮสต์ (https) แทนการเปิดไฟล์ตรง ๆ',
+    onlineWaitHost: 'รอโฮสต์ตั้งค่าและเริ่มเกม...',
+    onlineConnecting: 'กำลังสร้างห้อง...',
+    onlineConnected: 'เชื่อมต่อสำเร็จ! 🎉',
+    onlineConnectFailed: 'เชื่อมต่อไม่สำเร็จ ลองตรวจโค้ดอีกครั้ง',
+    onlineDisconnected: 'การเชื่อมต่อขาดหาย',
+    onlineInvalidCode: 'โค้ดไม่ถูกต้อง ลองคัดลอกใหม่อีกครั้ง',
+    onlineGenerating: 'กำลังสร้างโค้ด...',
+    onlineCopied: 'คัดลอกแล้ว!',
+    friendName: 'เพื่อน',
     setupStart: 'เริ่มการต่อสู้',
   },
   en: {
@@ -706,7 +881,35 @@ const I18N = {
     diffHard: 'Hard',
     playerCountTitle: 'Player Count',
     colorTitle: 'Your Character Color',
+    mapFeaturesTitle: 'Map Features',
+    toggleWarp: 'Warp Pipes',
+    toggleBelts: 'Conveyor Belts',
     rotateMsg: 'Please rotate your device to landscape to play',
+    onlineMenuBtn: 'Play Online with a Friend (P2P)',
+    onlineMenuBtnSub: 'No central server needed',
+    onlineTitle: 'Play Online with a Friend',
+    onlineIntro: 'Direct browser-to-browser connection (P2P), no central server — just trade a short code over chat.',
+    onlineCreateRoom: 'Create Room',
+    onlineJoinRoom: 'Join Room',
+    onlineStep1: 'Step 1: Copy this code and send it to your friend',
+    onlineStep2: 'Step 2: Paste your friend\'s reply code here',
+    copyCode: 'Copy Code',
+    connectBtn: 'Connect',
+    onlinePasteHere: 'Paste code here',
+    onlineGuestStep1: 'Step 1: Paste your friend\'s room code here',
+    onlineGenAnswer: 'Generate Reply Code',
+    onlineGuestStep2: 'Step 2: Send this code back to your friend',
+    onlineSetupAndStart: 'Set Up & Start',
+    onlineUnsupported: 'This browser doesn\'t support P2P (WebRTC) connections. Try opening this via a web host (https) instead of opening the file directly.',
+    onlineWaitHost: 'Waiting for the host to set up and start...',
+    onlineConnecting: 'Creating room...',
+    onlineConnected: 'Connected! 🎉',
+    onlineConnectFailed: 'Connection failed — double check the code and try again.',
+    onlineDisconnected: 'Connection lost',
+    onlineInvalidCode: 'Invalid code — try copying it again.',
+    onlineGenerating: 'Generating code...',
+    onlineCopied: 'Copied!',
+    friendName: 'FRIEND',
     setupStart: 'Start Battle',
   }
 };
@@ -715,6 +918,9 @@ function t(key) { return I18N[LANG][key] || key; }
 function applyI18n() {
   document.querySelectorAll('[data-i18n]').forEach(el => {
     el.textContent = t(el.getAttribute('data-i18n'));
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    el.setAttribute('placeholder', t(el.getAttribute('data-i18n-placeholder')));
   });
   document.documentElement.lang = LANG;
 }
@@ -740,6 +946,7 @@ const DEFAULT_LIVES = 3;
 const RESPAWN_DELAY = 3000;   // ms a player stays "down" before respawning
 const INVULN_DURATION = 3000; // ms of blinking invulnerability right after respawn
 let MIN_PLAYER_COUNT = 2, MAX_PLAYER_COUNT = 9;
+let ENABLE_WARP = true, ENABLE_BELTS = true;
 const SHRINK_WARN_TIME = 1100; // ms telegraph before ring solidifies
 
 /* Mode presets: map size, player count, fog-of-war on/off, camera behavior */
@@ -912,6 +1119,107 @@ const AudioSys = (() => {
 })();
 
 /* ---------------------------------------------------------------------- *
+ * Net — P2P WebRTC signaling + data channel, no server involved.
+ * Two browsers exchange a short base64 "code" manually (copy/paste via chat)
+ * containing the full SDP description (ICE candidates included, since we wait
+ * for gathering to finish before exporting — avoids needing multiple round
+ * trips for trickle ICE). A public STUN server handles NAT traversal; no data
+ * ever passes through any server Anthropic or anyone else operates.
+ * ---------------------------------------------------------------------- */
+const Net = (() => {
+  let pc = null;
+  let channel = null;
+  let role = null; // 'host' | 'guest'
+  const handlers = { open: null, message: null, close: null };
+
+  function isSupported() {
+    return typeof RTCPeerConnection !== 'undefined';
+  }
+
+  function encodeSignal(desc) {
+    return btoa(unescape(encodeURIComponent(JSON.stringify(desc))));
+  }
+  function decodeSignal(str) {
+    return JSON.parse(decodeURIComponent(escape(atob(str.trim()))));
+  }
+
+  function createPC() {
+    pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+    pc.onconnectionstatechange = () => {
+      if (!pc) return;
+      if (['disconnected', 'failed', 'closed'].includes(pc.connectionState)) {
+        if (handlers.close) handlers.close(pc.connectionState);
+      }
+    };
+    return pc;
+  }
+
+  function waitIceComplete(peerConn) {
+    if (peerConn.iceGatheringState === 'complete') return Promise.resolve();
+    return new Promise(resolve => {
+      let settled = false;
+      function finish() {
+        if (settled) return;
+        settled = true;
+        peerConn.removeEventListener('icegatheringstatechange', check);
+        resolve();
+      }
+      function check() { if (peerConn.iceGatheringState === 'complete') finish(); }
+      peerConn.addEventListener('icegatheringstatechange', check);
+      setTimeout(finish, 3000); // don't hang forever on unusual networks
+    });
+  }
+
+  function setupChannel(ch) {
+    channel = ch;
+    channel.onopen = () => { if (handlers.open) handlers.open(); };
+    channel.onmessage = (e) => { if (handlers.message) handlers.message(e.data); };
+    channel.onclose = () => { if (handlers.close) handlers.close('channel-closed'); };
+  }
+
+  async function hostCreateOffer() {
+    role = 'host';
+    createPC();
+    setupChannel(pc.createDataChannel('game', { ordered: true }));
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    await waitIceComplete(pc);
+    return encodeSignal(pc.localDescription);
+  }
+  async function hostAcceptAnswer(code) {
+    const desc = decodeSignal(code);
+    await pc.setRemoteDescription(desc);
+  }
+  async function guestAcceptOfferAndCreateAnswer(code) {
+    role = 'guest';
+    createPC();
+    pc.ondatachannel = (e) => setupChannel(e.channel);
+    const desc = decodeSignal(code);
+    await pc.setRemoteDescription(desc);
+    const answer = await pc.createAnswer();
+    await pc.setLocalDescription(answer);
+    await waitIceComplete(pc);
+    return encodeSignal(pc.localDescription);
+  }
+  function send(obj) {
+    if (channel && channel.readyState === 'open') channel.send(JSON.stringify(obj));
+  }
+  function isOpen() { return !!channel && channel.readyState === 'open'; }
+  function teardown() {
+    try { if (channel) channel.close(); } catch (e) {}
+    try { if (pc) pc.close(); } catch (e) {}
+    channel = null; pc = null; role = null;
+  }
+  function on(event, cb) { handlers[event] = cb; }
+  function getRole() { return role; }
+
+  return {
+    isSupported, hostCreateOffer, hostAcceptAnswer, guestAcceptOfferAndCreateAnswer,
+    send, isOpen, teardown, on, getRole,
+  };
+})();
+
+/* ---------------------------------------------------------------------- *
  * Map generation
  * ---------------------------------------------------------------------- */
 function inBounds(gx, gy) { return gx >= 0 && gy >= 0 && gx < COLS && gy < ROWS; }
@@ -959,29 +1267,33 @@ function generateMap() {
     for (let x = 1; x < COLS - 1; x++)
       if (grid[y][x].type === T_FLOOR && !clearSet.has(x + ',' + y)) floorCandidates.push({ x, y });
   shuffle(floorCandidates);
-  let pairId = 0;
-  for (let i = 0; i < 2 && floorCandidates.length >= 2; i++) {
-    const a = floorCandidates.pop();
-    const b = floorCandidates.pop();
-    grid[a.y][a.x] = { type: T_WARP, pair: pairId };
-    grid[b.y][b.x] = { type: T_WARP, pair: pairId };
-    pairId++;
+  if (ENABLE_WARP) {
+    let pairId = 0;
+    for (let i = 0; i < 2 && floorCandidates.length >= 2; i++) {
+      const a = floorCandidates.pop();
+      const b = floorCandidates.pop();
+      grid[a.y][a.x] = { type: T_WARP, pair: pairId };
+      grid[b.y][b.x] = { type: T_WARP, pair: pairId };
+      pairId++;
+    }
   }
 
   // Conveyor belt runs (short straight strips)
-  const beltDirs = ['up', 'down', 'left', 'right'];
-  for (let i = 0; i < 5; i++) {
-    if (!floorCandidates.length) break;
-    const start = floorCandidates.pop();
-    if (!start || grid[start.y][start.x].type !== T_FLOOR) continue;
-    const dir = beltDirs[Math.floor(Math.random() * beltDirs.length)];
-    const d = DIRS[dir];
-    let cx = start.x, cy = start.y;
-    const len = 2 + Math.floor(Math.random() * 3);
-    for (let s = 0; s < len; s++) {
-      if (!inBounds(cx, cy) || grid[cy][cx].type !== T_FLOOR) break;
-      grid[cy][cx] = { type: T_BELT, dir };
-      cx += d.x; cy += d.y;
+  if (ENABLE_BELTS) {
+    const beltDirs = ['up', 'down', 'left', 'right'];
+    for (let i = 0; i < 5; i++) {
+      if (!floorCandidates.length) break;
+      const start = floorCandidates.pop();
+      if (!start || grid[start.y][start.x].type !== T_FLOOR) continue;
+      const dir = beltDirs[Math.floor(Math.random() * beltDirs.length)];
+      const d = DIRS[dir];
+      let cx = start.x, cy = start.y;
+      const len = 2 + Math.floor(Math.random() * 3);
+      for (let s = 0; s < len; s++) {
+        if (!inBounds(cx, cy) || grid[cy][cx].type !== T_FLOOR) break;
+        grid[cy][cx] = { type: T_BELT, dir };
+        cx += d.x; cy += d.y;
+      }
     }
   }
 
@@ -1087,6 +1399,8 @@ function newGame(config) {
   ITEM_DROP_CHANCE = diff.itemDropChance;
   SHRINK_START_TIME = diff.shrinkStartTime;
   SHRINK_START_MAX_PLAYERS = diff.shrinkMaxPlayers;
+  ENABLE_WARP = config.enableWarp !== false;
+  ENABLE_BELTS = config.enableBelts !== false;
 
   const { grid, spawnPoints } = generateMap();
   const game = {
@@ -1118,20 +1432,26 @@ function newGame(config) {
     shakeT: 0,
     ended: null, // {result:'victory'|'eliminated', place, score}
     score: 0,
+    localId: null,   // the player entity this browser tab controls/views as "me"
+    remoteId: null,  // set when config.online — the id of the network-controlled peer
+    remoteInputRef: null, // shared {moveX,moveY,bombPressed} object the app layer writes into
   };
 
   shuffle(spawnPoints);
   const names = ['CIPHER', 'GLITCH', 'RAZOR', 'NEXUS', 'VIPER', 'ECHO', 'HAVOC', 'RUNE', 'PULSE'];
   for (let i = 0; i < PLAYER_COUNT; i++) {
     const sp = spawnPoints[i % spawnPoints.length];
-    const isHuman = i === 0;
-    const p = makePlayer(
-      sp.x, sp.y, isHuman,
-      isHuman ? humanColor : BOT_COLORS[i % BOT_COLORS.length],
-      isHuman ? 'YOU' : names[i % names.length],
-      isHuman ? 1 : diff.speedMult
-    );
+    const isLocalHuman = i === 0;
+    const isRemoteHuman = !!config.online && i === 1;
+    const isHuman = isLocalHuman || isRemoteHuman;
+    let color, name, speedMult;
+    if (isLocalHuman) { color = humanColor; name = 'YOU'; speedMult = 1; }
+    else if (isRemoteHuman) { color = config.remoteColor || '#22d3ee'; name = config.remoteName || 'FRIEND'; speedMult = 1; }
+    else { color = BOT_COLORS[i % BOT_COLORS.length]; name = names[i % names.length]; speedMult = diff.speedMult; }
+    const p = makePlayer(sp.x, sp.y, isHuman, color, name, speedMult);
     game.players.push(p);
+    if (isLocalHuman) game.localId = p.id;
+    if (isRemoteHuman) game.remoteId = p.id;
   }
   return game;
 }
@@ -1140,6 +1460,16 @@ function alivePlayers(game) { return game.players.filter(p => p.alive); }
 // "Still in the match" — includes players currently mid-respawn (temporarily not alive
 // but not out of lives yet). Used for the remaining-players HUD and win condition.
 function contenders(game) { return game.players.filter(p => !p.eliminated); }
+// The player this specific browser tab represents — "the human" for solo/host play,
+// or whichever entity a network guest was assigned (via game.localId, set from the
+// host's "start" message on the guest's reconstructed snapshot object).
+function localPlayer(game) {
+  if (game.localId != null) {
+    const p = game.players.find(x => x.id === game.localId);
+    if (p) return p;
+  }
+  return human(game);
+}
 
 /* ---------------------------------------------------------------------- *
  * Tile helpers
@@ -1560,6 +1890,25 @@ function ringTiles(ring) {
 /* ---------------------------------------------------------------------- *
  * Main loop / update
  * ---------------------------------------------------------------------- */
+// Applies a movement/bomb input to a specific player entity — shared by the local
+// player (from keyboard/joystick) and, in an online host match, the network-controlled
+// remote player (from the last input message received over the data channel).
+function applyPlayerInput(game, p, inp, dt) {
+  if (!p) return;
+  if (!p.alive) { p.moving = false; return; }
+  let dx = inp.moveX || 0, dy = inp.moveY || 0;
+  const mag = Math.hypot(dx, dy);
+  if (mag > 1) { dx /= mag; dy /= mag; }
+  if (mag > 0.12) { // small deadzone near joystick center
+    tryMove(game, p, dx, dy, dt);
+    p.moving = true;
+    p.dir = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up');
+  } else {
+    p.moving = false;
+  }
+  if (inp.bombPressed) { placeBomb(game, p); inp.bombPressed = false; }
+}
+
 function updateGame(game, dt, input) {
   if (game.state === 'countdown') {
     const prev = Math.ceil(game.countdown);
@@ -1575,22 +1924,14 @@ function updateGame(game, dt, input) {
   if (game.state !== 'playing') return;
 
   game.elapsed += dt * 1000;
-  game.score = Math.floor(game.elapsed / 100) + (human(game) ? human(game).kills * 100 : 0);
+  const localP = localPlayer(game);
+  game.score = Math.floor(game.elapsed / 100) + (localP ? localP.kills * 100 : 0);
   if (game.shakeT > 0) game.shakeT -= dt;
 
-  const human_ = human(game);
-  if (human_ && human_.alive) {
-    let dx = input.moveX || 0, dy = input.moveY || 0;
-    const mag = Math.hypot(dx, dy);
-    if (mag > 1) { dx /= mag; dy /= mag; }
-    if (mag > 0.12) { // small deadzone near joystick center
-      tryMove(game, human_, dx, dy, dt);
-      human_.moving = true;
-      human_.dir = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up');
-    } else {
-      human_.moving = false;
-    }
-    if (input.bombPressed) { placeBomb(game, human_); input.bombPressed = false; }
+  applyPlayerInput(game, localP, input, dt);
+  if (game.remoteId != null && game.remoteInputRef) {
+    const remoteP = game.players.find(p => p.id === game.remoteId);
+    applyPlayerInput(game, remoteP, game.remoteInputRef, dt);
   }
 
   game.players.forEach(p => {
@@ -1624,28 +1965,28 @@ function updateGame(game, dt, input) {
   updateShrink(game, dt);
 
   // camera follow (overview mode positions the camera itself, in drawGame)
-  if (human_ && game.cameraMode === 'follow') {
-    const targetX = human_.x, targetY = human_.y;
+  if (localP && game.cameraMode === 'follow') {
+    const targetX = localP.x, targetY = localP.y;
     game.camera.x += (targetX - game.camera.x) * Math.min(1, dt * 6);
     game.camera.y += (targetY - game.camera.y) * Math.min(1, dt * 6);
   }
 
   // End conditions — based on lives remaining (contenders), not momentary alive state,
-  // so being knocked down mid-respawn never ends the match by itself.
+  // so being knocked down mid-respawn never ends the match by itself. This reflects the
+  // HOST's own (local) result; an online guest computes their own separately client-side.
   const stillIn = contenders(game);
   if (stillIn.length <= 1) {
-    const h = human(game);
-    if (h && !h.eliminated) {
+    if (localP && !localP.eliminated) {
       game.state = 'ended';
-      game.ended = { result: 'victory', place: 1, score: game.score + 500, kills: h.kills };
+      game.ended = { result: 'victory', place: 1, score: game.score + 500, kills: localP.kills };
       AudioSys.sfx.victory();
     } else {
       game.state = 'ended';
-      game.ended = { result: 'eliminated', place: (h && h.place) || PLAYER_COUNT, score: game.score, kills: h ? h.kills : 0 };
+      game.ended = { result: 'eliminated', place: (localP && localP.place) || PLAYER_COUNT, score: game.score, kills: localP ? localP.kills : 0 };
     }
-  } else if (human_ && human_.eliminated && game.state === 'playing') {
+  } else if (localP && localP.eliminated && game.state === 'playing') {
     game.state = 'ended';
-    game.ended = { result: 'eliminated', place: human_.place, score: game.score, kills: human_.kills };
+    game.ended = { result: 'eliminated', place: localP.place, score: game.score, kills: localP.kills };
   }
 }
 function human(game) { return game.players.find(p => p.isHuman); }
@@ -1720,15 +2061,16 @@ function drawGame(ctx, canvas, game) {
   // explosions
   game.explosions.forEach(e => drawExplosion(ctx, e));
 
-  // players (sorted by y for pseudo-depth). In fog-of-war modes, bots outside the
-  // visibility radius are hidden; Clear Vision mode shows everyone at all times.
-  const h_ = human(game);
+  // players (sorted by y for pseudo-depth). In fog-of-war modes, everyone except the
+  // local player is hidden beyond the visibility radius — including a remote human
+  // opponent in online play, not just bots. Clear Vision mode shows everyone always.
+  const h_ = localPlayer(game);
   game.players
     .slice()
     .sort((a, b) => a.y - b.y)
     .forEach(p => {
       if (!p.alive && p.deathT > 1.1) return;
-      if (game.fog && h_ && !p.isHuman) {
+      if (game.fog && h_ && p.id !== h_.id) {
         const dd = Math.hypot(p.x - h_.x, p.y - h_.y);
         if (dd > game.fogRadius * 1.05) return;
       }
@@ -2048,6 +2390,7 @@ function roundRect(ctx, x, y, w, h, r) {
     game: $('#screen-game'),
     over: $('#screen-over'),
     setup: $('#screen-setup'),
+    online: $('#screen-online'),
   };
   function showScreen(name) {
     Object.values(screens).forEach(s => s.classList.remove('active'));
@@ -2141,8 +2484,20 @@ function roundRect(ctx, x, y, w, h, r) {
   $('#howtoBtn').addEventListener('click', () => showScreen('howto'));
   $('#howtoBackBtn').addEventListener('click', () => showScreen('menu'));
   $('#setupBackBtn').addEventListener('click', () => showScreen('menu'));
-  $('#restartBtn').addEventListener('click', () => showScreen('setup'));
-  $('#menuBtn').addEventListener('click', () => { showScreen('menu'); resizeBgCanvas(); });
+  $('#restartBtn').addEventListener('click', () => {
+    if (lastMatchWasOnline) {
+      const wasGuest = Net.getRole() === 'guest';
+      Net.teardown();
+      lastMatchWasOnline = false;
+      if (wasGuest) { showScreen('menu'); resizeBgCanvas(); return; } // guest doesn't control setup
+    }
+    showScreen('setup');
+  });
+  $('#menuBtn').addEventListener('click', () => {
+    if (lastMatchWasOnline) { Net.teardown(); lastMatchWasOnline = false; }
+    showScreen('menu');
+    resizeBgCanvas();
+  });
 
   function wireChipGroup(selector, onPick) {
     document.querySelectorAll(selector).forEach(chip => {
@@ -2203,9 +2558,35 @@ function roundRect(ctx, x, y, w, h, r) {
     });
   }
 
+  /* ---------------- Map feature toggles ---------------- */
+  let selEnableWarp = true;
+  let selEnableBelts = true;
+  function wireToggle(btnId, onChange) {
+    const btn = $(btnId);
+    btn.addEventListener('click', () => {
+      const nowOn = !btn.classList.contains('on');
+      btn.classList.toggle('on', nowOn);
+      btn.setAttribute('aria-checked', String(nowOn));
+      onChange(nowOn);
+    });
+  }
+  wireToggle('#toggleWarpBtn', (v) => { selEnableWarp = v; });
+  wireToggle('#toggleBeltsBtn', (v) => { selEnableBelts = v; });
+
+  let onlineHostPending = false; // true once host connects and heads to setup to configure+start
+  let lastMatchWasOnline = false;
   $('#setupStartBtn').addEventListener('click', () => {
     AudioSys.unlock();
-    startMatch({ mode: selMode, difficulty: selDiff, playerCount: selPlayerCount, color: selColor });
+    const config = {
+      mode: selMode, difficulty: selDiff, playerCount: selPlayerCount, color: selColor,
+      enableWarp: selEnableWarp, enableBelts: selEnableBelts,
+    };
+    if (onlineHostPending) {
+      onlineHostPending = false;
+      startOnlineHostMatch(config);
+    } else {
+      startMatch(config);
+    }
   });
 
   /* ---------------- Floating geometric background (menu) ---------------- */
@@ -2412,7 +2793,259 @@ function roundRect(ctx, x, y, w, h, r) {
     showScreen('over');
   }
 
+  /* ==================================================================== *
+   * ONLINE (P2P) — manual-signaling WebRTC. One browser is the "host" and
+   * runs the real simulation (authoritative); the other is a "guest" that
+   * just sends its input and renders whatever state the host broadcasts.
+   * This keeps the two sides perfectly in sync with zero desync risk, at
+   * the cost of the guest seeing everything ~1 round-trip behind — a fine
+   * trade for a casual 1v1 with a friend on a normal home connection.
+   * ==================================================================== */
+  const remoteInputRef = { moveX: 0, moveY: 0, bombPressed: false }; // host writes guest's input here
+  let netMyId = null;           // guest's own player id, told to them by the host
+  let guestEndedHandled = false;
+  let prevSnapForSfx = null;
+
+  function buildSnapshot(g) {
+    return {
+      t: 'state',
+      grid: g.grid,
+      items: g.items,
+      bombs: g.bombs,
+      explosions: g.explosions,
+      players: g.players,
+      shrink: { warning: g.shrink.warning, warnTiles: g.shrink.warnTiles },
+      camera: g.camera,
+      shakeT: g.shakeT,
+      fog: g.fog,
+      cameraMode: g.cameraMode,
+      fogRadius: g.fogRadius,
+      state: g.state,
+      countdown: g.countdown,
+      elapsed: g.elapsed,
+      cols: COLS, rows: ROWS, playerCount: PLAYER_COUNT,
+    };
+  }
+
+  // The guest computes their OWN score/placement from the snapshot rather than trusting
+  // game.score/game.ended (those reflect the HOST's own result, not the guest's).
+  function computeGuestScoreAndEnded(snap, myId) {
+    const me = snap.players && snap.players.find(p => p.id === myId);
+    if (!me) return null;
+    const baseScore = Math.floor((snap.elapsed || 0) / 100) + (me.kills || 0) * 100;
+    let ended = null;
+    if (snap.state === 'ended') {
+      const stillIn = snap.players.filter(p => !p.eliminated);
+      const iWon = !me.eliminated && stillIn.length <= 1;
+      ended = iWon
+        ? { result: 'victory', place: 1, score: baseScore + 500, kills: me.kills || 0 }
+        : { result: 'eliminated', place: me.place || snap.playerCount, score: baseScore, kills: me.kills || 0 };
+    }
+    return { score: baseScore, ended };
+  }
+
+  function guestMaybePlaySfx(prev, cur, myId) {
+    if (!prev) return;
+    if (cur.explosions && cur.explosions.length > 0 && (!prev.explosions || prev.explosions.length === 0)) AudioSys.sfx.explode();
+    const meNow = cur.players && cur.players.find(p => p.id === myId);
+    const meWas = prev.players && prev.players.find(p => p.id === myId);
+    if (meNow && meWas) {
+      if (meNow.range > meWas.range || meNow.bombsMax > meWas.bombsMax) AudioSys.sfx.pickup();
+      if (meWas.alive && !meNow.alive) AudioSys.sfx.death();
+    }
+    if (prev.state === 'countdown' && cur.state === 'playing') AudioSys.sfx.go();
+    if (!prev.shrink.warning && cur.shrink.warning) AudioSys.sfx.warn();
+  }
+
+  function startOnlineHostMatch(config) {
+    config = Object.assign({}, config, { online: true });
+    game = newGame(config);
+    game.remoteInputRef = remoteInputRef;
+    remoteInputRef.moveX = 0; remoteInputRef.moveY = 0; remoteInputRef.bombPressed = false;
+    lastMatchWasOnline = true;
+    showScreen('game');
+    resizeCanvas();
+    refreshMusicLabel();
+    Net.send({ t: 'start', yourId: game.remoteId });
+    lastTime = performance.now();
+    netSnapshotAccumMs = 0;
+    requestAnimationFrame(loop);
+  }
+
+  function guestLoop(now) {
+    if (!game) return;
+    ensureCanvasSized();
+    drawGame(ctx, canvas, game);
+    updateHUD();
+    if (game.state === 'ended' && !guestEndedHandled) {
+      guestEndedHandled = true;
+      endMatchUI();
+      return;
+    }
+    if (Net.getRole() === 'guest' && Net.isOpen()) {
+      const msg = { t: 'input', moveX: input.moveX || 0, moveY: input.moveY || 0, bomb: !!input.bombPressed };
+      Net.send(msg);
+      input.bombPressed = false; // one-shot, consumed locally once sent
+    }
+    requestAnimationFrame(guestLoop);
+  }
+
+  function handleNetMessage(raw) {
+    let msg;
+    try { msg = JSON.parse(raw); } catch (e) { return; }
+    if (Net.getRole() === 'host') {
+      if (msg.t === 'input') {
+        remoteInputRef.moveX = msg.moveX || 0;
+        remoteInputRef.moveY = msg.moveY || 0;
+        if (msg.bomb) remoteInputRef.bombPressed = true;
+      }
+    } else if (Net.getRole() === 'guest') {
+      if (msg.t === 'start') {
+        netMyId = msg.yourId;
+        guestEndedHandled = false;
+        prevSnapForSfx = null;
+        lastMatchWasOnline = true;
+        showScreen('game');
+        resizeCanvas();
+        refreshMusicLabel();
+        requestAnimationFrame(guestLoop);
+      } else if (msg.t === 'state') {
+        COLS = msg.cols; ROWS = msg.rows; PLAYER_COUNT = msg.playerCount;
+        guestMaybePlaySfx(prevSnapForSfx, msg, netMyId);
+        prevSnapForSfx = msg;
+        msg.localId = netMyId;
+        const res = computeGuestScoreAndEnded(msg, netMyId);
+        if (res) {
+          msg.score = res.score;
+          if (res.ended) msg.ended = res.ended;
+        }
+        game = msg;
+      }
+    }
+  }
+  Net.on('message', handleNetMessage);
+  Net.on('close', () => {
+    const statusEl = document.querySelector('#screen-online.active') ? onlineActiveStatusEl() : null;
+    if (statusEl) { statusEl.textContent = t('onlineDisconnected'); statusEl.className = 'online-status err'; }
+  });
+  function onlineActiveStatusEl() {
+    if ($('#onlineHostPanel').style.display !== 'none') return $('#hostStatus');
+    if ($('#onlineGuestPanel').style.display !== 'none') return $('#guestStatus');
+    return null;
+  }
+
+  /* ---------------- Online screen UI wiring ---------------- */
+  $('#onlineBtn').addEventListener('click', () => {
+    AudioSys.unlock();
+    resetOnlineScreen();
+    showScreen('online');
+    if (!Net.isSupported()) $('#onlineUnsupportedNote').style.display = 'block';
+  });
+  $('#onlineBackBtn').addEventListener('click', () => {
+    Net.teardown();
+    showScreen('menu');
+    resizeBgCanvas();
+  });
+
+  function resetOnlineScreen() {
+    $('#onlineChoice').style.display = 'block';
+    $('#onlineHostPanel').style.display = 'none';
+    $('#onlineGuestPanel').style.display = 'none';
+    $('#onlineHostStartRow').style.display = 'none';
+    $('#onlineGuestStep2').style.display = 'none';
+    $('#hostOfferCode').value = '';
+    $('#hostAnswerInput').value = '';
+    $('#guestOfferInput').value = '';
+    $('#guestAnswerCode').value = '';
+    setStatus($('#hostStatus'), '');
+    setStatus($('#guestStatus'), '');
+  }
+  function setStatus(el, text, kind) {
+    el.textContent = text;
+    el.className = 'online-status' + (kind ? ' ' + kind : '');
+  }
+  async function copyText(text, btnEl) {
+    let ok = false;
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+        ok = true;
+      }
+    } catch (e) {}
+    if (!ok) {
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta); ta.focus(); ta.select();
+        ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+      } catch (e) {}
+    }
+    if (btnEl) {
+      const orig = btnEl.textContent;
+      btnEl.textContent = ok ? t('onlineCopied') : orig;
+      setTimeout(() => { btnEl.textContent = orig; }, 1200);
+    }
+  }
+
+  $('#onlineHostBtn').addEventListener('click', async () => {
+    $('#onlineChoice').style.display = 'none';
+    $('#onlineHostPanel').style.display = 'block';
+    setStatus($('#hostStatus'), t('onlineGenerating'));
+    try {
+      const code = await Net.hostCreateOffer();
+      $('#hostOfferCode').value = code;
+      setStatus($('#hostStatus'), '');
+      Net.on('open', () => {
+        setStatus($('#hostStatus'), t('onlineConnected'), 'ok');
+        $('#onlineHostStartRow').style.display = 'block';
+      });
+    } catch (e) {
+      setStatus($('#hostStatus'), t('onlineConnectFailed'), 'err');
+    }
+  });
+  $('#copyOfferBtn').addEventListener('click', () => copyText($('#hostOfferCode').value, $('#copyOfferBtn')));
+  $('#hostConnectBtn').addEventListener('click', async () => {
+    const code = $('#hostAnswerInput').value.trim();
+    if (!code) return;
+    setStatus($('#hostStatus'), t('onlineConnecting'));
+    try {
+      await Net.hostAcceptAnswer(code);
+      // 'open' handler (registered above) will flip status to connected once the
+      // data channel actually opens; ICE negotiation can take a moment.
+    } catch (e) {
+      setStatus($('#hostStatus'), t('onlineInvalidCode'), 'err');
+    }
+  });
+  $('#onlineHostProceedBtn').addEventListener('click', () => {
+    onlineHostPending = true;
+    showScreen('setup');
+  });
+
+  $('#onlineJoinBtn').addEventListener('click', () => {
+    $('#onlineChoice').style.display = 'none';
+    $('#onlineGuestPanel').style.display = 'block';
+  });
+  $('#guestGenAnswerBtn').addEventListener('click', async () => {
+    const code = $('#guestOfferInput').value.trim();
+    if (!code) return;
+    setStatus($('#guestStatus'), t('onlineGenerating'));
+    try {
+      const answer = await Net.guestAcceptOfferAndCreateAnswer(code);
+      $('#guestAnswerCode').value = answer;
+      $('#onlineGuestStep2').style.display = 'block';
+      setStatus($('#guestStatus'), t('onlineWaitHost'));
+      Net.on('open', () => {
+        setStatus($('#guestStatus'), t('onlineConnected'), 'ok');
+      });
+    } catch (e) {
+      setStatus($('#guestStatus'), t('onlineInvalidCode'), 'err');
+    }
+  });
+  $('#copyAnswerBtn').addEventListener('click', () => copyText($('#guestAnswerCode').value, $('#copyAnswerBtn')));
+
   /* ---------------- Resize / responsive canvas ---------------- */
+  let lastCanvasW = -1, lastCanvasH = -1;
   function resizeCanvas() {
     const rect = canvas.parentElement.getBoundingClientRect();
     const dpr = Math.min(devicePixelRatio || 1, 2);
@@ -2420,14 +3053,36 @@ function roundRect(ctx, x, y, w, h, r) {
     canvas.height = Math.round(rect.height * dpr);
     canvas.style.width = rect.width + 'px';
     canvas.style.height = rect.height + 'px';
+    lastCanvasW = rect.width;
+    lastCanvasH = rect.height;
+  }
+  // Catches the case where the device was rotated (or fullscreen finished
+  // transitioning) without a 'resize'/'orientationchange' event firing reliably —
+  // this was the root cause of the canvas staying zoomed for the old portrait size
+  // after actually rotating to landscape. Cheap enough to check every frame.
+  function ensureCanvasSized() {
+    const rect = canvas.parentElement.getBoundingClientRect();
+    if (Math.abs(rect.width - lastCanvasW) > 2 || Math.abs(rect.height - lastCanvasH) > 2) {
+      resizeCanvas();
+    }
   }
   window.addEventListener('resize', () => { resizeCanvas(); resizeBgCanvas(); });
+  window.addEventListener('orientationchange', () => {
+    // Layout doesn't always settle immediately on rotation; check again shortly after.
+    setTimeout(() => { resizeCanvas(); resizeBgCanvas(); }, 50);
+    setTimeout(() => { resizeCanvas(); resizeBgCanvas(); }, 300);
+  });
+  document.addEventListener('fullscreenchange', () => { resizeCanvas(); resizeBgCanvas(); });
+  document.addEventListener('webkitfullscreenchange', () => { resizeCanvas(); resizeBgCanvas(); });
+  if (window.screen && window.screen.orientation && window.screen.orientation.addEventListener) {
+    window.screen.orientation.addEventListener('change', () => { resizeCanvas(); resizeBgCanvas(); });
+  }
 
   /* ---------------- HUD ---------------- */
   function updateHUD() {
     const remaining = contenders(game).length;
     $('#hudRemaining').textContent = t('remaining') + ': ' + remaining + ' / ' + PLAYER_COUNT;
-    const h = human(game);
+    const h = localPlayer(game);
     $('#hudScore').textContent = t('score') + ': ' + game.score;
     $('#hudHighScore').textContent = t('highscore') + ': ' + getHighScore();
     if (h) {
@@ -2451,6 +3106,7 @@ function roundRect(ctx, x, y, w, h, r) {
 
   /* ---------------- Main loop ---------------- */
   let lastTime = 0;
+  let netSnapshotAccumMs = 0;
   function loop(now) {
     if (!game) return;
     const dt = Math.min(0.05, (now - lastTime) / 1000);
@@ -2460,8 +3116,16 @@ function roundRect(ctx, x, y, w, h, r) {
     if (!isRotatePromptShowing()) {
       updateGame(game, dt, input);
     }
+    ensureCanvasSized();
     drawGame(ctx, canvas, game);
     updateHUD();
+    if (Net.getRole() === 'host' && Net.isOpen()) {
+      netSnapshotAccumMs += dt * 1000;
+      if (netSnapshotAccumMs >= 60) { // ~16Hz — plenty smooth for a casual data channel
+        netSnapshotAccumMs = 0;
+        Net.send(buildSnapshot(game));
+      }
+    }
     if (game.state === 'ended') {
       endMatchUI();
       return;
