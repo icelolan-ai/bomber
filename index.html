@@ -17,6 +17,8 @@
   --panel: rgba(24, 14, 38, 0.82);
   --border: rgba(168, 85, 247, 0.35);
   --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-l: env(safe-area-inset-left, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
 }
 
 * { box-sizing: border-box; }
@@ -197,6 +199,57 @@ html, body {
 }
 #screen-setup .menu-btn { margin-top: 8px; }
 
+.stepper {
+  display: flex; align-items: center; justify-content: center; gap: 18px;
+}
+.stepper-btn {
+  width: 42px; height: 42px;
+  border-radius: 10px;
+  background: linear-gradient(160deg, rgba(168,85,247,0.4), rgba(24,14,38,0.9));
+  border: 1.5px solid var(--border);
+  color: var(--ink);
+  font-size: 1.3rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+.stepper-btn:active { transform: scale(0.93); }
+.stepper-btn:disabled { opacity: 0.35; cursor: default; }
+.stepper-value {
+  min-width: 40px;
+  text-align: center;
+  font-size: 1.3rem;
+  font-weight: 900;
+  color: var(--accent-cyan);
+}
+
+.color-row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.color-swatch {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  border: 2.5px solid rgba(255,255,255,0.15);
+  cursor: pointer;
+  padding: 0;
+}
+.color-swatch.selected {
+  border-color: #ffffff;
+  box-shadow: 0 0 12px currentColor, 0 0 0 2px rgba(255,255,255,0.3);
+}
+
+.item-list { margin-top: -6px; }
+.item-desc-row { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+.item-icon {
+  flex: none;
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.62rem; font-weight: 900;
+  color: #0a0614;
+  margin-top: 1px;
+}
+.item-icon-range { background: #f472b6; box-shadow: 0 0 10px rgba(244,114,182,0.6); }
+.item-icon-bomb { background: #38bdf8; box-shadow: 0 0 10px rgba(56,189,248,0.6); }
+.item-desc-row p { margin: 0; color: var(--ink-dim); font-size: 0.82rem; line-height: 1.5; }
+
 /* ---------------- Game screen ---------------- */
 #screen-game { flex-direction: column; }
 #gameStage {
@@ -230,6 +283,7 @@ html, body {
 #hudRemaining { color: var(--accent-pink); }
 #hudScore { color: var(--accent-cyan); }
 #hudHighScore { color: var(--ink-dim); font-weight: 400; }
+.hud-lives { color: var(--accent-pink); font-size: 0.9rem; letter-spacing: 2px; }
 .hud-left, .hud-right { display: flex; flex-direction: column; gap: 6px; }
 
 #shrinkWarn {
@@ -257,37 +311,53 @@ html, body {
   pointer-events: none;
 }
 
-/* Touch controls */
+/* Touch controls — full-stage overlay so the joystick can float anywhere
+   within its zone (left/bottom, thumb-reachable in landscape) and the bomb
+   button sits fixed at the bottom-right (thumb-reachable on the other hand). */
 .touch-controls {
-  position: absolute; left: 0; right: 0; bottom: 0;
-  display: flex; justify-content: space-between; align-items: flex-end;
-  padding: 0 16px calc(16px + var(--safe-b));
+  position: absolute; inset: 0;
   z-index: 7;
   pointer-events: none;
 }
-.dpad {
-  display: grid;
-  grid-template-columns: 52px 52px 52px;
-  grid-template-rows: 52px 52px 52px;
-  gap: 4px;
+
+/* Floating virtual joystick — invisible until touched. Appears exactly where
+   the thumb first lands within this zone (bottom-left, ergonomic for landscape
+   grip), then tracks the drag from that point; releases fade it back out so
+   the next touch can spawn it fresh wherever the thumb lands. */
+.joystick-zone {
+  position: absolute;
+  left: var(--safe-l); bottom: var(--safe-b);
+  width: 55%; height: 78%;
   pointer-events: auto;
-}
-.dpad-btn {
-  background: rgba(24,14,38,0.75);
-  border: 1.5px solid var(--border);
-  border-radius: 12px;
-  color: var(--ink);
-  font-size: 1.3rem;
-  display: flex; align-items: center; justify-content: center;
   touch-action: none;
 }
-.dpad-btn:active { background: rgba(168,85,247,0.5); }
-#padUp { grid-column: 2; grid-row: 1; }
-#padLeft { grid-column: 1; grid-row: 2; }
-#padRight { grid-column: 3; grid-row: 2; }
-#padDown { grid-column: 2; grid-row: 3; }
+.joystick-base {
+  position: absolute;
+  left: 0; top: 0;
+  width: 108px; height: 108px;
+  margin-left: -54px; margin-top: -54px;
+  border-radius: 50%;
+  background: rgba(24,14,38,0.55);
+  border: 1.5px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0;
+  transition: opacity 0.1s ease;
+}
+.joystick-zone.dragging .joystick-base { opacity: 1; }
+.joystick-knob {
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(160deg, rgba(168,85,247,0.85), rgba(124,58,237,0.75));
+  border: 1.5px solid rgba(255,255,255,0.35);
+  box-shadow: 0 0 16px rgba(168,85,247,0.55);
+  transition: transform 0.06s ease-out;
+}
+.joystick-zone.dragging .joystick-knob { transition: none; }
 
 #padBomb {
+  position: absolute;
+  right: calc(20px + var(--safe-r));
+  bottom: calc(20px + var(--safe-b));
   pointer-events: auto;
   width: 84px; height: 84px;
   border-radius: 50%;
@@ -302,11 +372,47 @@ html, body {
 }
 #padBomb:active { transform: scale(0.94); }
 
-@media (min-width: 900px) {
-  .touch-controls { display: none; }
+/* Show touch controls on touch-capable devices (phones AND tablets like iPad),
+   not based on screen width — a wide iPad screen was wrongly treated as "desktop"
+   and hid the controls even though it has no physical keys. Detected in JS via
+   pointer/touch capability and applied as a class on <body>. */
+.touch-controls { display: none; }
+body.touch-device .touch-controls { display: block; }
+body:not(.touch-device) .desktop-hint { display: block; }
+
+/* ---------------- Fullscreen landscape gameplay ---------------- */
+/* The gameplay screen is locked to landscape (fullscreen + orientation lock where
+   the browser allows it, e.g. Android Chrome). Menus, setup, and how-to-play are
+   unaffected and remain usable in portrait. iOS doesn't allow JS orientation
+   locking outside an installed PWA, so this overlay is the universal fallback:
+   whenever gameplay is active and the device is actually in portrait, prompt the
+   player to rotate instead of showing a broken cramped layout. */
+.rotate-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  z-index: 9999;
+  background: #050308;
+  color: var(--ink);
+  flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; padding: 24px; gap: 14px;
 }
-@media (max-width: 899px) {
-  .desktop-hint { display: none; }
+.rotate-icon {
+  font-size: 3rem;
+  animation: rotateHint 1.8s ease-in-out infinite;
+}
+.rotate-overlay p {
+  margin: 0;
+  max-width: 320px;
+  font-size: 0.95rem;
+  color: var(--ink-dim);
+  letter-spacing: 0.02em;
+}
+@keyframes rotateHint {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(90deg); }
+}
+@media (orientation: portrait) {
+  body.in-gameplay .rotate-overlay { display: flex; }
 }
 
 /* ---------------- Game Over screen ---------------- */
@@ -394,6 +500,20 @@ html, body {
         </div>
       </div>
 
+      <div class="setup-group">
+        <h3 class="setup-label" data-i18n="playerCountTitle">จำนวนผู้เล่น</h3>
+        <div class="stepper">
+          <button class="stepper-btn" id="pcMinus">−</button>
+          <span class="stepper-value" id="pcValue">9</span>
+          <button class="stepper-btn" id="pcPlus">+</button>
+        </div>
+      </div>
+
+      <div class="setup-group">
+        <h3 class="setup-label" data-i18n="colorTitle">สีตัวละครของคุณ</h3>
+        <div class="color-row" id="colorRow"></div>
+      </div>
+
       <button class="menu-btn primary" id="setupStartBtn" data-i18n="setupStart">เริ่มการต่อสู้</button>
       <button class="menu-btn" id="setupBackBtn" data-i18n="back">กลับเมนูหลัก</button>
     </div>
@@ -407,9 +527,14 @@ html, body {
       <div class="howto-item"><h3 data-i18n="howto1_h">การเคลื่อนที่</h3><p data-i18n="howto1">...</p></div>
       <div class="howto-item"><h3 data-i18n="howto2_h">วางระเบิด</h3><p data-i18n="howto2">...</p></div>
       <div class="howto-item"><h3 data-i18n="howto3_h">ไอเทม</h3><p data-i18n="howto3">...</p></div>
+      <div class="howto-item item-list">
+        <div class="item-desc-row"><span class="item-icon item-icon-range">+R</span><p data-i18n="itemRangeDesc">...</p></div>
+        <div class="item-desc-row"><span class="item-icon item-icon-bomb">+B</span><p data-i18n="itemBombDesc">...</p></div>
+      </div>
       <div class="howto-item"><h3 data-i18n="howto4_h">ท่อวาร์ป</h3><p data-i18n="howto4">...</p></div>
       <div class="howto-item"><h3 data-i18n="howto5_h">สายพานลำเลียง</h3><p data-i18n="howto5">...</p></div>
       <div class="howto-item"><h3 data-i18n="howto6_h">โซนอันตราย</h3><p data-i18n="howto6">...</p></div>
+      <div class="howto-item"><h3 data-i18n="howto7_h">ชีวิตและการเกิดใหม่</h3><p data-i18n="howto7">...</p></div>
       <button class="menu-btn primary" id="howtoBackBtn" data-i18n="back">กลับเมนูหลัก</button>
     </div>
   </section>
@@ -425,21 +550,27 @@ html, body {
         </div>
         <div class="hud-right">
           <div class="hud-chip" id="hudHighScore">High Score: 0</div>
+          <div class="hud-chip hud-lives" id="hudLives">♥♥♥</div>
         </div>
       </div>
       <div id="shrinkWarn">ZONE COLLAPSING!</div>
       <div id="countdownOverlay">3</div>
       <div class="touch-controls">
-        <div class="dpad">
-          <button class="dpad-btn" id="padUp">▲</button>
-          <button class="dpad-btn" id="padLeft">◀</button>
-          <button class="dpad-btn" id="padRight">▶</button>
-          <button class="dpad-btn" id="padDown">▼</button>
+        <div class="joystick-zone" id="joystickZone">
+          <div class="joystick-base" id="joystickBase">
+            <div class="joystick-knob" id="joystickKnob"></div>
+          </div>
         </div>
         <button id="padBomb">BOMB</button>
       </div>
     </div>
   </section>
+
+  <!-- ============ ROTATE DEVICE PROMPT (landscape-only gameplay) ============ -->
+  <div class="rotate-overlay" id="rotateOverlay">
+    <div class="rotate-icon">📱</div>
+    <p data-i18n="rotateMsg">กรุณาหมุนอุปกรณ์เป็นแนวนอนเพื่อเล่นเกม</p>
+  </div>
 
   <!-- ============ GAME OVER ============ -->
   <section id="screen-over" class="screen">
@@ -482,7 +613,7 @@ const I18N = {
     back: 'กลับเมนูหลัก',
     howtoTitle: 'วิธีเล่น',
     howto1_h: 'การเคลื่อนที่',
-    howto1: 'บนคอมพิวเตอร์ใช้ปุ่มลูกศร • บนมือถือใช้จอยเสมือนที่มุมล่างซ้าย',
+    howto1: 'บนคอมพิวเตอร์ใช้ปุ่มลูกศร • บนมือถือใช้จอยสติ๊กแบบลากที่มุมล่างซ้าย',
     howto2_h: 'วางระเบิด',
     howto2: 'กด Spacebar หรือแตะปุ่มระเบิดสีม่วงเพื่อวางระเบิด ระวังแรงระเบิดของตัวเอง!',
     howto3_h: 'ไอเทม',
@@ -492,7 +623,11 @@ const I18N = {
     howto5_h: 'สายพานลำเลียง',
     howto5: 'พื้นที่ที่ดันผู้เล่นและระเบิดที่วางอยู่ให้เคลื่อนไปตามทิศทางอัตโนมัติ',
     howto6_h: 'โซนอันตราย (Sudden Death)',
-    howto6: 'เมื่อเวลาผ่านไปหรือผู้เล่นเหลือน้อย ขอบแผนที่จะพังถล่มเข้ามาเรื่อย ๆ อยู่นอกโซนคือความตาย รอดให้ถึงคนสุดท้าย!',
+    howto6: 'เมื่อเวลาผ่านไปหรือผู้เล่นเหลือน้อย ขอบแผนที่จะพังถล่มเข้ามาเรื่อย ๆ แบบสุ่มเป็นบล็อก ๆ อยู่นอกโซนคือความตาย รอดให้ถึงคนสุดท้าย!',
+    howto7_h: 'ชีวิตและการเกิดใหม่',
+    howto7: 'ผู้เล่นแต่ละคนมี 3 ชีวิต เมื่อโดนระเบิดจะเสียชีวิตหนึ่งดวงแล้วรอ 3 วินาทีก่อนเกิดใหม่ที่จุดเดิม ช่วงเกิดใหม่จะกระพริบและอมตะ 3 วินาที เมื่อหมดทุกชีวิตถึงจะถูกกำจัดจริง',
+    itemRangeDesc: 'เพิ่มระยะแรงระเบิด (Bomb Range) ไปอีก 1 ช่อง',
+    itemBombDesc: 'เพิ่มจำนวนระเบิดที่วางพร้อมกันได้สูงสุดอีก 1 ลูก',
     remaining: 'ผู้เล่นที่เหลือ',
     score: 'คะแนน',
     highscore: 'คะแนนสูงสุด',
@@ -508,13 +643,16 @@ const I18N = {
     setupTitle: 'ตั้งค่าการต่อสู้',
     modeTitle: 'โหมดเกม',
     modeRoyale: 'แบทเทิลรอยัล',
-    modeRoyaleDesc: 'แผนที่ใหญ่ • 9 ผู้เล่น • มีหมอกบังสายตา ต้องระวังศัตรูที่ซุ่มอยู่',
+    modeRoyaleDesc: 'แผนที่ใหญ่ • หมอกบังสายตา ต้องระวังศัตรูที่ซุ่มอยู่',
     modeClear: 'มองเห็นทั่วกระดาน',
-    modeClearDesc: 'แผนที่ขนาดกลาง • 4 ผู้เล่น • ไม่มีหมอก เห็นทุกตัวละครตลอดเวลา',
+    modeClearDesc: 'แผนที่ขนาดกลาง • ไม่มีหมอก เห็นทุกตัวละครตลอดเวลา',
     diffTitle: 'ระดับความยาก',
     diffEasy: 'ง่าย',
     diffNormal: 'ปกติ',
     diffHard: 'ยาก',
+    playerCountTitle: 'จำนวนผู้เล่น',
+    colorTitle: 'สีตัวละครของคุณ',
+    rotateMsg: 'กรุณาหมุนอุปกรณ์เป็นแนวนอนเพื่อเล่นเกม',
     setupStart: 'เริ่มการต่อสู้',
   },
   en: {
@@ -529,7 +667,7 @@ const I18N = {
     back: 'Back to Menu',
     howtoTitle: 'How to Play',
     howto1_h: 'Movement',
-    howto1: 'Desktop: Arrow keys • Mobile: virtual D-pad, bottom-left',
+    howto1: 'Desktop: Arrow keys • Mobile: drag the virtual joystick, bottom-left',
     howto2_h: 'Place Bombs',
     howto2: 'Press Spacebar or tap the purple bomb button. Watch your own blast radius!',
     howto3_h: 'Power-ups',
@@ -539,7 +677,11 @@ const I18N = {
     howto5_h: 'Conveyor Belts',
     howto5: 'Moving floor zones that automatically push players and live bombs in one direction.',
     howto6_h: 'Sudden Death',
-    howto6: 'As time runs out or few players remain, the outer map collapses inward. Stay inside the safe zone — be the last one standing!',
+    howto6: 'As time runs out or few players remain, the outer map collapses inward in random scattered chunks. Stay inside the safe zone — be the last one standing!',
+    howto7_h: 'Lives & Respawning',
+    howto7: 'Everyone starts with 3 lives. Getting caught in a blast costs one life, then a 3-second wait before respawning right where you fell. You blink with brief invulnerability for 3 seconds after respawning. Once all lives are gone, you\'re out for good.',
+    itemRangeDesc: 'Increases your bomb blast range by 1 tile.',
+    itemBombDesc: 'Increases the max number of bombs you can have active at once by 1.',
     remaining: 'Players Remaining',
     score: 'Score',
     highscore: 'High Score',
@@ -555,13 +697,16 @@ const I18N = {
     setupTitle: 'Battle Setup',
     modeTitle: 'Game Mode',
     modeRoyale: 'Battle Royale',
-    modeRoyaleDesc: 'Large map • 9 players • Fog of war — watch for enemies lurking nearby',
+    modeRoyaleDesc: 'Large map • Fog of war — watch for enemies lurking nearby',
     modeClear: 'Clear Vision',
-    modeClearDesc: 'Medium map • 4 players • No fog — see every character at all times',
+    modeClearDesc: 'Medium map • No fog — see every character at all times',
     diffTitle: 'Difficulty',
     diffEasy: 'Easy',
     diffNormal: 'Normal',
     diffHard: 'Hard',
+    playerCountTitle: 'Player Count',
+    colorTitle: 'Your Character Color',
+    rotateMsg: 'Please rotate your device to landscape to play',
     setupStart: 'Start Battle',
   }
 };
@@ -591,6 +736,10 @@ let SHRINK_START_TIME = 55000; // ms — time-based shrink trigger
 let SHRINK_START_MAX_PLAYERS = 4; // remaining-players-based shrink trigger
 let MIN_SHRINK_ELAPSED = 22000; // ms — shrink can never start before this, however few players remain
 const SHRINK_INTERVAL = 2400; // ms per random-chunk collapse cycle (a ring takes ~2 cycles to fully close)
+const DEFAULT_LIVES = 3;
+const RESPAWN_DELAY = 3000;   // ms a player stays "down" before respawning
+const INVULN_DURATION = 3000; // ms of blinking invulnerability right after respawn
+let MIN_PLAYER_COUNT = 2, MAX_PLAYER_COUNT = 9;
 const SHRINK_WARN_TIME = 1100; // ms telegraph before ring solidifies
 
 /* Mode presets: map size, player count, fog-of-war on/off, camera behavior */
@@ -897,7 +1046,12 @@ function makePlayer(gx, gy, isHuman, color, name, speedMult) {
     y: gy * TILE + TILE / 2,
     dir: 'down',
     moving: false,
-    alive: true,
+    alive: true,        // currently active/present on the field right now
+    eliminated: false,  // true only once lives run out — permanently out of the match
+    lives: DEFAULT_LIVES,
+    respawnAt: 0,        // ms remaining until respawn, while knocked down
+    invulnT: 0,           // seconds remaining of post-respawn blinking invulnerability
+    deathPos: null,        // where to respawn — the tile they died on
     speed: BASE_SPEED * (speedMult || 1),
     bombsMax: 1,
     bombsActive: 0,
@@ -924,11 +1078,12 @@ function newGame(config) {
   const diffKey = config.difficulty && DIFFICULTY_PRESETS[config.difficulty] ? config.difficulty : 'normal';
   const mode = MODE_PRESETS[modeKey];
   const diff = DIFFICULTY_PRESETS[diffKey];
+  const humanColor = config.color || HUMAN_COLOR;
 
   // reconfigure mutable globals for this match
   COLS = mode.cols;
   ROWS = mode.rows;
-  PLAYER_COUNT = mode.playerCount;
+  PLAYER_COUNT = Math.max(MIN_PLAYER_COUNT, Math.min(MAX_PLAYER_COUNT, config.playerCount || mode.playerCount));
   ITEM_DROP_CHANCE = diff.itemDropChance;
   SHRINK_START_TIME = diff.shrinkStartTime;
   SHRINK_START_MAX_PLAYERS = diff.shrinkMaxPlayers;
@@ -958,7 +1113,7 @@ function newGame(config) {
       warnTiles: [],    // tiles currently telegraphing before collapse
       warning: false,
     },
-    camera: { x: (mode.cols * TILE) / 2, y: (mode.rows * TILE) / 2, zoom: mode.zoom },
+    camera: { x: (mode.cols * TILE) / 2, y: (mode.rows * TILE) / 2, zoom: mode.zoom, baseZoom: mode.zoom },
     fogRadius: diff.fogRadiusTiles * TILE,
     shakeT: 0,
     ended: null, // {result:'victory'|'eliminated', place, score}
@@ -972,7 +1127,7 @@ function newGame(config) {
     const isHuman = i === 0;
     const p = makePlayer(
       sp.x, sp.y, isHuman,
-      isHuman ? HUMAN_COLOR : BOT_COLORS[i % BOT_COLORS.length],
+      isHuman ? humanColor : BOT_COLORS[i % BOT_COLORS.length],
       isHuman ? 'YOU' : names[i % names.length],
       isHuman ? 1 : diff.speedMult
     );
@@ -982,6 +1137,9 @@ function newGame(config) {
 }
 
 function alivePlayers(game) { return game.players.filter(p => p.alive); }
+// "Still in the match" — includes players currently mid-respawn (temporarily not alive
+// but not out of lives yet). Used for the remaining-players HUD and win condition.
+function contenders(game) { return game.players.filter(p => !p.eliminated); }
 
 /* ---------------------------------------------------------------------- *
  * Tile helpers
@@ -1130,14 +1288,36 @@ function dist(a, b) {
   return Math.hypot(ax - (b.x !== undefined ? b.x : b.gx * TILE), ay - (b.y !== undefined ? b.y : b.gy * TILE));
 }
 
-function killPlayer(game, p, killer) {
-  if (!p.alive) return;
+function killPlayer(game, p, killer, forceEliminate) {
+  if (!p.alive || p.eliminated || p.invulnT > 0) return; // already down, out, or currently invulnerable
   p.alive = false;
   p.deathT = 0;
+  p.deathPos = { x: p.x, y: p.y };
+  // Caught by the collapsing zone is final, not a "life" — respawning at the exact
+  // spot that just became a solid wall would leave them embedded in it, unreachable
+  // by bots or blasts, which stalls the match forever. Bomb deaths still use lives.
+  p.lives = forceEliminate ? 0 : Math.max(0, p.lives - 1);
   if (killer && killer.id !== p.id && killer.alive) killer.kills++;
   if (p.isHuman) AudioSys.sfx.death();
-  const remaining = alivePlayers(game);
-  p.place = remaining.length + 1;
+
+  if (p.lives <= 0) {
+    const stillIn = contenders(game).filter(x => x.id !== p.id).length;
+    p.place = stillIn + 1;
+    p.eliminated = true;
+  } else {
+    p.respawnAt = RESPAWN_DELAY;
+  }
+}
+
+function respawnPlayer(game, p) {
+  p.alive = true;
+  p.x = p.deathPos.x;
+  p.y = p.deathPos.y;
+  p.invulnT = INVULN_DURATION / 1000;
+  p.bombsActive = 0;
+  p.warpCooldown = 0;
+  p.aiDir = null;
+  p.aiTimer = 0;
 }
 
 /* ---------------------------------------------------------------------- *
@@ -1351,7 +1531,7 @@ function updateShrink(game, dt) {
       game.players.forEach(p => {
         if (!p.alive) return;
         const g = gridOf(p.x, p.y);
-        if (g.x === pos.x && g.y === pos.y) killPlayer(game, p, null);
+        if (g.x === pos.x && g.y === pos.y) killPlayer(game, p, null, true);
       });
     });
     const collapsedKeys = new Set(tiles.map(p => p.x + ',' + p.y));
@@ -1400,13 +1580,10 @@ function updateGame(game, dt, input) {
 
   const human_ = human(game);
   if (human_ && human_.alive) {
-    let dx = 0, dy = 0;
-    if (input.left) dx -= 1;
-    if (input.right) dx += 1;
-    if (input.up) dy -= 1;
-    if (input.down) dy += 1;
-    if (dx !== 0 && dy !== 0) { dx *= 0.7071; dy *= 0.7071; }
-    if (dx !== 0 || dy !== 0) {
+    let dx = input.moveX || 0, dy = input.moveY || 0;
+    const mag = Math.hypot(dx, dy);
+    if (mag > 1) { dx /= mag; dy /= mag; }
+    if (mag > 0.12) { // small deadzone near joystick center
       tryMove(game, human_, dx, dy, dt);
       human_.moving = true;
       human_.dir = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up');
@@ -1422,7 +1599,14 @@ function updateGame(game, dt, input) {
   });
 
   game.players.forEach(p => {
-    if (!p.alive) return;
+    if (p.eliminated) return;
+    if (!p.alive) {
+      // knocked down — waiting to respawn at the spot they died
+      p.respawnAt -= dt * 1000;
+      if (p.respawnAt <= 0) respawnPlayer(game, p);
+      return;
+    }
+    if (p.invulnT > 0) p.invulnT = Math.max(0, p.invulnT - dt);
     applyBeltAndWarp(game, p, dt);
     checkItemPickup(game, p);
     p.animT += dt;
@@ -1446,22 +1630,20 @@ function updateGame(game, dt, input) {
     game.camera.y += (targetY - game.camera.y) * Math.min(1, dt * 6);
   }
 
-  // End conditions
-  const remaining = alivePlayers(game);
-  if (remaining.length <= 1) {
+  // End conditions — based on lives remaining (contenders), not momentary alive state,
+  // so being knocked down mid-respawn never ends the match by itself.
+  const stillIn = contenders(game);
+  if (stillIn.length <= 1) {
     const h = human(game);
-    if (h && h.alive) {
+    if (h && !h.eliminated) {
       game.state = 'ended';
       game.ended = { result: 'victory', place: 1, score: game.score + 500, kills: h.kills };
       AudioSys.sfx.victory();
-    } else if (h && !h.alive) {
+    } else {
       game.state = 'ended';
-      game.ended = { result: 'eliminated', place: h.place || remaining.length + 1, score: game.score, kills: h.kills };
-    } else if (remaining.length === 0) {
-      game.state = 'ended';
-      game.ended = { result: 'eliminated', place: PLAYER_COUNT, score: game.score, kills: 0 };
+      game.ended = { result: 'eliminated', place: (h && h.place) || PLAYER_COUNT, score: game.score, kills: h ? h.kills : 0 };
     }
-  } else if (human_ && !human_.alive && game.state === 'playing') {
+  } else if (human_ && human_.eliminated && game.state === 'playing') {
     game.state = 'ended';
     game.ended = { result: 'eliminated', place: human_.place, score: game.score, kills: human_.kills };
   }
@@ -1490,13 +1672,22 @@ function drawGame(ctx, canvas, game) {
   ctx.fillRect(0, 0, w, h);
 
   if (game.cameraMode === 'overview') {
-    // fit the whole (smaller) arena in view — everyone stays visible at all times
+    // Fit the whole (smaller) arena to the screen — everyone stays visible at all
+    // times. No tight upper cap here: a small map on a big screen (tablet) should
+    // zoom in a lot to fill it, not sit tiny in the middle with black borders.
     const mapPxW = COLS * TILE, mapPxH = ROWS * TILE;
     let fitZoom = Math.min(w / mapPxW, h / mapPxH) * 0.94;
-    fitZoom = Math.max(0.35, Math.min(fitZoom, 2.1));
+    fitZoom = Math.max(0.35, Math.min(fitZoom, 6));
     game.camera.zoom = fitZoom;
     game.camera.x = mapPxW / 2;
     game.camera.y = mapPxH / 2;
+  } else {
+    // Follow mode: scale the base zoom gently with the screen's shorter dimension,
+    // so a large tablet screen shows things bigger/clearer instead of a fixed
+    // tile-count that looks small on a big display.
+    const shortDim = Math.min(w, h);
+    const scaleFactor = Math.max(0.85, Math.min(1.8, shortDim / 760));
+    game.camera.zoom = game.camera.baseZoom * scaleFactor;
   }
 
   const zoom = game.camera.zoom;
@@ -1700,6 +1891,18 @@ function drawBomb(ctx, b) {
   ctx.arc(3, -17 * pulse, 2.4, 0, Math.PI * 2);
   ctx.fill();
 
+  // floating numeric countdown — whole seconds remaining, floats just above the bomb
+  const secsLeft = Math.max(0, Math.ceil(b.timer / 1000));
+  ctx.font = 'bold 13px monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const numY = -26 - Math.sin(performance.now() / 220) * 1.5;
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = 'rgba(5,3,8,0.85)';
+  ctx.strokeText(String(secsLeft), 0, numY);
+  ctx.fillStyle = bodyColor;
+  ctx.fillText(String(secsLeft), 0, numY);
+
   ctx.restore();
 }
 
@@ -1723,6 +1926,13 @@ function drawExplosion(ctx, e) {
 }
 
 function drawPlayer(ctx, p, game) {
+  // Blinking invulnerability right after respawn — skip rendering on alternating
+  // beats to create a flicker, without touching movement/collision logic.
+  if (p.alive && p.invulnT > 0) {
+    const blinkOn = Math.floor(performance.now() / 110) % 2 === 0;
+    if (!blinkOn) return;
+  }
+
   const px = p.x, py = p.y;
   ctx.save();
   ctx.translate(px, py);
@@ -1741,6 +1951,18 @@ function drawPlayer(ctx, p, game) {
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.arc(0, 12, 12, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // extra white ring while invulnerable, so it reads clearly even on bots
+  if (p.alive && p.invulnT > 0) {
+    ctx.save();
+    ctx.globalAlpha = 0.55;
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.arc(0, -2, 16, 0, Math.PI * 2);
     ctx.stroke();
     ctx.restore();
   }
@@ -1830,6 +2052,46 @@ function roundRect(ctx, x, y, w, h, r) {
   function showScreen(name) {
     Object.values(screens).forEach(s => s.classList.remove('active'));
     screens[name].classList.add('active');
+    if (name === 'game') {
+      document.body.classList.add('in-gameplay');
+      enterLandscapeMode();
+    } else {
+      document.body.classList.remove('in-gameplay');
+      exitLandscapeMode();
+    }
+  }
+
+  // Fullscreen + landscape lock — only for actual gameplay. Menus stay portrait-friendly.
+  // Android Chrome (and similar) support screen.orientation.lock while fullscreen; iOS
+  // Safari supports neither outside an installed PWA, so failures here are silently
+  // ignored — the CSS rotate-prompt overlay is the universal fallback either way.
+  function enterLandscapeMode() {
+    try {
+      const el = document.documentElement;
+      const reqFs = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
+      if (reqFs) Promise.resolve(reqFs.call(el)).catch(() => {});
+    } catch (e) {}
+    try {
+      if (screen.orientation && screen.orientation.lock) {
+        Promise.resolve(screen.orientation.lock('landscape')).catch(() => {});
+      }
+    } catch (e) {}
+  }
+  function exitLandscapeMode() {
+    try {
+      if (document.fullscreenElement || document.webkitFullscreenElement) {
+        const exitFs = document.exitFullscreen || document.webkitExitFullscreen;
+        if (exitFs) Promise.resolve(exitFs.call(document)).catch(() => {});
+      }
+    } catch (e) {}
+    try {
+      if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock();
+    } catch (e) {}
+  }
+  function isRotatePromptShowing() {
+    return document.body.classList.contains('in-gameplay') &&
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(orientation: portrait)').matches;
   }
 
   const canvas = $('#gameCanvas');
@@ -1838,7 +2100,7 @@ function roundRect(ctx, x, y, w, h, r) {
   const bgCtx = bgCanvas.getContext('2d');
 
   let game = null;
-  const input = { up: false, down: false, left: false, right: false, bombPressed: false };
+  const input = { moveX: 0, moveY: 0, bombPressed: false };
   const HS_KEY = 'neonBlastHighScore';
   function getHighScore() { return parseInt(localStorage.getItem(HS_KEY) || '0', 10); }
   function setHighScore(v) { localStorage.setItem(HS_KEY, String(v)); }
@@ -1867,6 +2129,10 @@ function roundRect(ctx, x, y, w, h, r) {
   /* ---------------- Menu nav / battle setup ---------------- */
   let selMode = 'royale';
   let selDiff = 'normal';
+  const PLAYER_COUNT_RANGE = { royale: { min: 4, max: 9 }, clearvision: { min: 2, max: 6 } };
+  let selPlayerCount = PLAYER_COUNT_RANGE.royale.max;
+  const COLOR_PALETTE = ['#e879f9', '#22d3ee', '#facc15', '#4ade80', '#fb923c', '#f87171', '#f8fafc', '#c084fc'];
+  let selColor = COLOR_PALETTE[0];
 
   $('#startBtn').addEventListener('click', () => {
     AudioSys.unlock();
@@ -1887,16 +2153,59 @@ function roundRect(ctx, x, y, w, h, r) {
       });
     });
   }
-  wireChipGroup('.chip-mode', (v) => { selMode = v; updateModeDesc(); });
+  wireChipGroup('.chip-mode', (v) => {
+    selMode = v;
+    updateModeDesc();
+    const range = PLAYER_COUNT_RANGE[selMode];
+    selPlayerCount = Math.max(range.min, Math.min(range.max, selPlayerCount));
+    updatePlayerCountUI();
+  });
   wireChipGroup('.chip-diff', (v) => { selDiff = v; });
 
   function updateModeDesc() {
     $('#modeDesc').textContent = t(selMode === 'royale' ? 'modeRoyaleDesc' : 'modeClearDesc');
   }
 
+  /* ---------------- Player count stepper ---------------- */
+  function updatePlayerCountUI() {
+    $('#pcValue').textContent = String(selPlayerCount);
+    const range = PLAYER_COUNT_RANGE[selMode];
+    $('#pcMinus').disabled = selPlayerCount <= range.min;
+    $('#pcPlus').disabled = selPlayerCount >= range.max;
+  }
+  $('#pcMinus').addEventListener('click', () => {
+    const range = PLAYER_COUNT_RANGE[selMode];
+    selPlayerCount = Math.max(range.min, selPlayerCount - 1);
+    updatePlayerCountUI();
+  });
+  $('#pcPlus').addEventListener('click', () => {
+    const range = PLAYER_COUNT_RANGE[selMode];
+    selPlayerCount = Math.min(range.max, selPlayerCount + 1);
+    updatePlayerCountUI();
+  });
+
+  /* ---------------- Character color picker ---------------- */
+  function initColorRow() {
+    const row = $('#colorRow');
+    row.innerHTML = '';
+    COLOR_PALETTE.forEach((hex, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'color-swatch' + (hex === selColor ? ' selected' : '');
+      btn.style.background = hex;
+      btn.style.color = hex;
+      btn.dataset.value = hex;
+      btn.addEventListener('click', () => {
+        selColor = hex;
+        row.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
+        btn.classList.add('selected');
+      });
+      row.appendChild(btn);
+    });
+  }
+
   $('#setupStartBtn').addEventListener('click', () => {
     AudioSys.unlock();
-    startMatch({ mode: selMode, difficulty: selDiff });
+    startMatch({ mode: selMode, difficulty: selDiff, playerCount: selPlayerCount, color: selColor });
   });
 
   /* ---------------- Floating geometric background (menu) ---------------- */
@@ -1992,34 +2301,91 @@ function roundRect(ctx, x, y, w, h, r) {
     }
   }
 
-  /* ---------------- Input: keyboard ---------------- */
+  /* ---------------- Input: keyboard (arrow keys / WASD still work if a keyboard
+     is attached, e.g. a Bluetooth keyboard on iPad) ---------------- */
+  const keysDown = { up: false, down: false, left: false, right: false };
   const KEYMAP = {
     ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right',
     KeyW: 'up', KeyS: 'down', KeyA: 'left', KeyD: 'right',
   };
+  function applyKeyboardMove() {
+    if (joyActive) return; // don't fight an active joystick drag
+    let dx = 0, dy = 0;
+    if (keysDown.left) dx -= 1;
+    if (keysDown.right) dx += 1;
+    if (keysDown.up) dy -= 1;
+    if (keysDown.down) dy += 1;
+    input.moveX = dx;
+    input.moveY = dy;
+  }
   window.addEventListener('keydown', (e) => {
-    if (KEYMAP[e.code]) { input[KEYMAP[e.code]] = true; e.preventDefault(); }
+    if (KEYMAP[e.code]) { keysDown[KEYMAP[e.code]] = true; applyKeyboardMove(); e.preventDefault(); }
     if (e.code === 'Space') { input.bombPressed = true; e.preventDefault(); }
   });
   window.addEventListener('keyup', (e) => {
-    if (KEYMAP[e.code]) { input[KEYMAP[e.code]] = false; }
+    if (KEYMAP[e.code]) { keysDown[KEYMAP[e.code]] = false; applyKeyboardMove(); }
   });
 
-  /* ---------------- Input: touch D-pad ---------------- */
-  function bindHold(el, key) {
-    const on = (ev) => { ev.preventDefault(); input[key] = true; };
-    const off = (ev) => { ev.preventDefault(); input[key] = false; };
-    el.addEventListener('touchstart', on, { passive: false });
-    el.addEventListener('touchend', off, { passive: false });
-    el.addEventListener('touchcancel', off, { passive: false });
-    el.addEventListener('mousedown', on);
-    el.addEventListener('mouseup', off);
-    el.addEventListener('mouseleave', off);
+  /* ---------------- Input: floating virtual joystick (drag-style, like typical
+     mobile games) — replaces the old arrow D-pad. Spawns wherever the thumb first
+     lands inside the zone rather than a fixed circle, and works with touch, mouse,
+     and pen via the unified Pointer Events API. ---------------- */
+  const joyZone = $('#joystickZone');
+  const joyBase = $('#joystickBase');
+  const joyKnob = $('#joystickKnob');
+  const JOY_RADIUS = 40; // px the knob can travel from center, matches the CSS base size
+  const JOY_BASE_HALF = 54; // half the base's rendered size, for edge clamping
+  let joyActive = false;
+  let joyPointerId = null;
+  let joyCenter = { x: 0, y: 0 }; // screen-space, used for drag delta math
+
+  function joyPointerDown(e) {
+    e.preventDefault();
+    joyActive = true;
+    joyPointerId = e.pointerId;
+    joyZone.classList.add('dragging');
+
+    // Spawn the joystick base exactly where the thumb landed (clamped so it stays
+    // fully visible within the zone), then track drag relative to that point.
+    const rect = joyZone.getBoundingClientRect();
+    let localX = e.clientX - rect.left;
+    let localY = e.clientY - rect.top;
+    localX = Math.max(JOY_BASE_HALF, Math.min(rect.width - JOY_BASE_HALF, localX));
+    localY = Math.max(JOY_BASE_HALF, Math.min(rect.height - JOY_BASE_HALF, localY));
+    joyBase.style.left = localX + 'px';
+    joyBase.style.top = localY + 'px';
+    joyCenter = { x: rect.left + localX, y: rect.top + localY };
+
+    joyKnob.style.transform = 'translate(0px, 0px)';
+    input.moveX = 0;
+    input.moveY = 0;
+    if (joyZone.setPointerCapture) { try { joyZone.setPointerCapture(e.pointerId); } catch (err) {} }
   }
-  bindHold($('#padUp'), 'up');
-  bindHold($('#padDown'), 'down');
-  bindHold($('#padLeft'), 'left');
-  bindHold($('#padRight'), 'right');
+  function joyPointerMove(e) {
+    if (!joyActive || e.pointerId !== joyPointerId) return;
+    e.preventDefault();
+    let dx = e.clientX - joyCenter.x;
+    let dy = e.clientY - joyCenter.y;
+    const dist = Math.hypot(dx, dy);
+    if (dist > JOY_RADIUS) { dx = (dx / dist) * JOY_RADIUS; dy = (dy / dist) * JOY_RADIUS; }
+    joyKnob.style.transform = `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px)`;
+    input.moveX = Math.max(-1, Math.min(1, dx / JOY_RADIUS));
+    input.moveY = Math.max(-1, Math.min(1, dy / JOY_RADIUS));
+  }
+  function joyPointerUp(e) {
+    if (e.pointerId !== joyPointerId) return;
+    joyActive = false;
+    joyPointerId = null;
+    joyZone.classList.remove('dragging'); // fades the base out; next touch spawns it fresh
+    joyKnob.style.transform = 'translate(0px, 0px)';
+    input.moveX = 0;
+    input.moveY = 0;
+  }
+  joyZone.addEventListener('pointerdown', joyPointerDown);
+  window.addEventListener('pointermove', joyPointerMove);
+  window.addEventListener('pointerup', joyPointerUp);
+  window.addEventListener('pointercancel', joyPointerUp);
+
   $('#padBomb').addEventListener('touchstart', (e) => { e.preventDefault(); input.bombPressed = true; }, { passive: false });
   $('#padBomb').addEventListener('mousedown', (e) => { input.bombPressed = true; });
 
@@ -2059,11 +2425,18 @@ function roundRect(ctx, x, y, w, h, r) {
 
   /* ---------------- HUD ---------------- */
   function updateHUD() {
-    const remaining = alivePlayers(game).length;
+    const remaining = contenders(game).length;
     $('#hudRemaining').textContent = t('remaining') + ': ' + remaining + ' / ' + PLAYER_COUNT;
     const h = human(game);
     $('#hudScore').textContent = t('score') + ': ' + game.score;
     $('#hudHighScore').textContent = t('highscore') + ': ' + getHighScore();
+    if (h) {
+      const hearts = '♥'.repeat(Math.max(0, h.lives)) + '♡'.repeat(Math.max(0, DEFAULT_LIVES - h.lives));
+      $('#hudLives').textContent = hearts;
+      $('#hudLives').style.display = 'block';
+    } else {
+      $('#hudLives').style.display = 'none';
+    }
     const countdownEl = $('#countdownOverlay');
     if (game.state === 'countdown') {
       countdownEl.style.display = 'flex';
@@ -2082,7 +2455,11 @@ function roundRect(ctx, x, y, w, h, r) {
     if (!game) return;
     const dt = Math.min(0.05, (now - lastTime) / 1000);
     lastTime = now;
-    updateGame(game, dt, input);
+    // Pause simulation while the "please rotate" prompt is covering the screen —
+    // no point burning bomb fuses or shrink timers the player can't see or react to.
+    if (!isRotatePromptShowing()) {
+      updateGame(game, dt, input);
+    }
     drawGame(ctx, canvas, game);
     updateHUD();
     if (game.state === 'ended') {
@@ -2095,10 +2472,16 @@ function roundRect(ctx, x, y, w, h, r) {
   /* ---------------- Boot ---------------- */
   function boot() {
     setLang('th');
+    // Touch controls should show on any touch-capable device (phones AND tablets
+    // like iPad) — screen width alone isn't a reliable signal for "has a keyboard".
+    const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0);
+    if (isTouchDevice) document.body.classList.add('touch-device');
     resizeBgCanvas();
     initShapes();
     requestAnimationFrame(drawBg);
     updateModeDesc();
+    updatePlayerCountUI();
+    initColorRow();
   }
   window.addEventListener('DOMContentLoaded', boot);
 })();
