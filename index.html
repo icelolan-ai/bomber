@@ -1,0 +1,2108 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<title>NEON BLAST — Cyberpunk Bomberman Royale</title>
+<style>
+:root {
+  --bg: #09090b;
+  --bg2: #120c1e;
+  --primary: #a855f7;
+  --primary-dim: #7c3aed;
+  --accent-pink: #f472b6;
+  --accent-cyan: #22d3ee;
+  --ink: #f3e8ff;
+  --ink-dim: #c4b5fd;
+  --panel: rgba(24, 14, 38, 0.82);
+  --border: rgba(168, 85, 247, 0.35);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+}
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0; height: 100%; width: 100%;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Courier New', 'Trebuchet MS', 'Sarabun', monospace, sans-serif;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+#app {
+  position: fixed; inset: 0;
+  display: flex;
+  flex-direction: column;
+  background:
+    radial-gradient(circle at 20% 15%, rgba(168,85,247,0.14), transparent 45%),
+    radial-gradient(circle at 85% 80%, rgba(34,211,238,0.10), transparent 40%),
+    var(--bg);
+}
+
+.screen { display: none; position: absolute; inset: 0; }
+.screen.active { display: flex; }
+
+/* ---------------- Menu ---------------- */
+#screen-menu, #screen-howto, #screen-setup {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 24px;
+  position: relative;
+}
+#bgCanvas {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  z-index: 0;
+}
+.menu-panel {
+  position: relative;
+  z-index: 1;
+  max-width: 460px;
+  width: 100%;
+}
+.logo {
+  font-size: clamp(2.2rem, 9vw, 3.4rem);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  color: var(--ink);
+  text-shadow: 0 0 6px var(--primary), 0 0 22px var(--primary-dim), 0 0 46px rgba(168,85,247,0.5);
+  margin: 0;
+}
+.logo-bomb { color: var(--accent-pink); }
+.subtitle {
+  color: var(--ink-dim);
+  margin: 6px 0 30px;
+  font-size: clamp(0.85rem, 3vw, 1.05rem);
+  letter-spacing: 0.04em;
+}
+
+.menu-btn {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  width: 100%;
+  padding: 15px 18px;
+  margin: 10px 0;
+  background: linear-gradient(160deg, rgba(124,58,237,0.28), rgba(24,14,38,0.9));
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 700;
+  font-size: 1.02rem;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+  box-shadow: 0 0 0 rgba(168,85,247,0);
+}
+.menu-btn:active { transform: scale(0.97); }
+.menu-btn:hover { border-color: var(--primary); box-shadow: 0 0 22px rgba(168,85,247,0.35); }
+.menu-btn.primary {
+  background: linear-gradient(160deg, rgba(168,85,247,0.55), rgba(124,58,237,0.5));
+  border-color: var(--primary);
+  box-shadow: 0 0 26px rgba(168,85,247,0.45);
+}
+.menu-btn .sub { font-size: 0.72rem; color: var(--ink-dim); font-weight: 400; margin-top: 3px; letter-spacing: 0.05em; }
+
+.menu-row {
+  display: flex; gap: 10px; margin-top: 6px;
+}
+.menu-row .menu-btn { margin: 0; padding: 11px; font-size: 0.85rem; }
+
+.topbar {
+  position: absolute; top: 14px; right: 14px; left: 14px;
+  display: flex; justify-content: space-between; align-items: center;
+  z-index: 2;
+}
+.pill-btn {
+  background: rgba(24,14,38,0.85);
+  border: 1px solid var(--border);
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 8px 14px;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+}
+.highscore-chip {
+  font-size: 0.72rem;
+  color: var(--accent-cyan);
+  letter-spacing: 0.03em;
+}
+
+/* ---------------- How to play ---------------- */
+.howto-card {
+  position: relative; z-index: 1;
+  max-width: 520px; width: 100%;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  max-height: 78vh;
+  overflow-y: auto;
+  text-align: left;
+}
+.howto-card h2 {
+  margin: 0 0 14px; text-align: center;
+  color: var(--ink);
+  text-shadow: 0 0 12px var(--primary-dim);
+  letter-spacing: 0.05em;
+}
+.howto-item { margin-bottom: 14px; }
+.howto-item h3 {
+  margin: 0 0 3px; color: var(--accent-pink); font-size: 0.92rem; letter-spacing: 0.03em;
+}
+.howto-item p { margin: 0; color: var(--ink-dim); font-size: 0.85rem; line-height: 1.5; }
+
+/* ---------------- Battle setup ---------------- */
+.setup-group { margin-bottom: 20px; }
+.setup-label {
+  margin: 0 0 8px;
+  color: var(--accent-cyan);
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+}
+.chip-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip {
+  flex: 1 1 auto;
+  min-width: 96px;
+  padding: 10px 12px;
+  background: rgba(24,14,38,0.7);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  color: var(--ink-dim);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.12s ease;
+}
+.chip:active { transform: scale(0.96); }
+.chip.selected {
+  background: linear-gradient(160deg, rgba(168,85,247,0.55), rgba(124,58,237,0.5));
+  border-color: var(--primary);
+  color: var(--ink);
+  box-shadow: 0 0 16px rgba(168,85,247,0.4);
+}
+.setup-desc {
+  margin: 10px 0 0;
+  font-size: 0.78rem;
+  color: var(--ink-dim);
+  line-height: 1.5;
+}
+#screen-setup .menu-btn { margin-top: 8px; }
+
+/* ---------------- Game screen ---------------- */
+#screen-game { flex-direction: column; }
+#gameStage {
+  position: relative;
+  flex: 1;
+  width: 100%;
+  overflow: hidden;
+  background: #050308;
+}
+#gameCanvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
+
+.hud {
+  position: absolute; top: 0; left: 0; right: 0;
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding: 10px 12px;
+  z-index: 5;
+  pointer-events: none;
+  gap: 8px;
+}
+.hud-chip {
+  background: rgba(9,9,11,0.6);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 6px 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--ink);
+  backdrop-filter: blur(3px);
+  white-space: nowrap;
+}
+#hudRemaining { color: var(--accent-pink); }
+#hudScore { color: var(--accent-cyan); }
+#hudHighScore { color: var(--ink-dim); font-weight: 400; }
+.hud-left, .hud-right { display: flex; flex-direction: column; gap: 6px; }
+
+#shrinkWarn {
+  position: absolute; top: 52px; left: 50%; transform: translateX(-50%);
+  display: none;
+  color: #ff6b81;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-shadow: 0 0 10px #ef4444;
+  animation: pulseWarn 0.5s infinite alternate;
+  z-index: 6;
+  pointer-events: none;
+  font-size: clamp(0.8rem, 3vw, 1.1rem);
+}
+@keyframes pulseWarn { from { opacity: 0.5; } to { opacity: 1; } }
+
+#countdownOverlay {
+  position: absolute; inset: 0;
+  display: none; align-items: center; justify-content: center;
+  font-size: clamp(4rem, 22vw, 8rem);
+  font-weight: 900;
+  color: var(--ink);
+  text-shadow: 0 0 30px var(--primary), 0 0 70px var(--primary-dim);
+  z-index: 8;
+  pointer-events: none;
+}
+
+/* Touch controls */
+.touch-controls {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: space-between; align-items: flex-end;
+  padding: 0 16px calc(16px + var(--safe-b));
+  z-index: 7;
+  pointer-events: none;
+}
+.dpad {
+  display: grid;
+  grid-template-columns: 52px 52px 52px;
+  grid-template-rows: 52px 52px 52px;
+  gap: 4px;
+  pointer-events: auto;
+}
+.dpad-btn {
+  background: rgba(24,14,38,0.75);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  color: var(--ink);
+  font-size: 1.3rem;
+  display: flex; align-items: center; justify-content: center;
+  touch-action: none;
+}
+.dpad-btn:active { background: rgba(168,85,247,0.5); }
+#padUp { grid-column: 2; grid-row: 1; }
+#padLeft { grid-column: 1; grid-row: 2; }
+#padRight { grid-column: 3; grid-row: 2; }
+#padDown { grid-column: 2; grid-row: 3; }
+
+#padBomb {
+  pointer-events: auto;
+  width: 84px; height: 84px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #e879f9, #9333ea 70%);
+  border: 2px solid var(--accent-pink);
+  color: #fff;
+  font-weight: 900;
+  font-size: 0.78rem;
+  letter-spacing: 0.03em;
+  box-shadow: 0 0 24px rgba(232,121,249,0.55);
+  touch-action: none;
+}
+#padBomb:active { transform: scale(0.94); }
+
+@media (min-width: 900px) {
+  .touch-controls { display: none; }
+}
+@media (max-width: 899px) {
+  .desktop-hint { display: none; }
+}
+
+/* ---------------- Game Over screen ---------------- */
+#screen-over {
+  align-items: center; justify-content: center; flex-direction: column;
+  background: radial-gradient(circle at 50% 20%, rgba(168,85,247,0.2), transparent 60%), var(--bg);
+  text-align: center; padding: 24px;
+}
+.over-card {
+  max-width: 420px; width: 100%;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 32px 26px;
+}
+.over-title {
+  font-size: clamp(1.5rem, 6vw, 2.1rem);
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  margin: 0 0 18px;
+}
+.over-title.win { color: #facc15; text-shadow: 0 0 22px rgba(250,204,21,0.7); }
+.over-title.lose { color: var(--accent-pink); text-shadow: 0 0 22px rgba(244,114,182,0.5); }
+.over-stats { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+.over-stats div { font-size: 0.95rem; color: var(--ink-dim); }
+.over-stats span { color: var(--ink); font-weight: 700; }
+#overScore { color: var(--accent-cyan) !important; font-size: 1.3rem; }
+
+.btn-row { display: flex; gap: 10px; }
+.btn-row .menu-btn { margin: 0; }
+
+/* Scrollbar (webkit) */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-thumb { background: var(--primary-dim); border-radius: 4px; }
+
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ============ MAIN MENU ============ -->
+  <section id="screen-menu" class="screen active">
+    <canvas id="bgCanvas"></canvas>
+    <div class="topbar">
+      <span class="highscore-chip" id="highscoreMenu">HIGH SCORE: 0</span>
+      <button class="pill-btn" id="langBtn">EN</button>
+    </div>
+    <div class="menu-panel">
+      <h1 class="logo">NEON <span class="logo-bomb">BLAST</span></h1>
+      <p class="subtitle" data-i18n="subtitle">รอยัลบั้มเบอร์แมนไซเบอร์พังก์</p>
+      <button class="menu-btn primary" id="startBtn">
+        <span data-i18n="start">เริ่มศึกแบทเทิลรอยัล</span>
+        <span class="sub" data-i18n="startSub">8–10 ผู้เล่น</span>
+      </button>
+      <div class="menu-row">
+        <button class="menu-btn" id="howtoBtn" data-i18n="howto">วิธีเล่น</button>
+        <button class="menu-btn" id="musicBtn">
+          <span data-i18n="music">เพลง Lofi</span>
+          <span class="sub" id="musicStateLabel">Off</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ BATTLE SETUP ============ -->
+  <section id="screen-setup" class="screen">
+    <div class="howto-card">
+      <h2 data-i18n="setupTitle">ตั้งค่าการต่อสู้</h2>
+
+      <div class="setup-group">
+        <h3 class="setup-label" data-i18n="modeTitle">โหมดเกม</h3>
+        <div class="chip-row">
+          <button class="chip chip-mode selected" data-value="royale" data-i18n="modeRoyale">แบทเทิลรอยัล</button>
+          <button class="chip chip-mode" data-value="clearvision" data-i18n="modeClear">มองเห็นทั่วกระดาน</button>
+        </div>
+        <p class="setup-desc" id="modeDesc"></p>
+      </div>
+
+      <div class="setup-group">
+        <h3 class="setup-label" data-i18n="diffTitle">ระดับความยาก</h3>
+        <div class="chip-row">
+          <button class="chip chip-diff" data-value="easy" data-i18n="diffEasy">ง่าย</button>
+          <button class="chip chip-diff selected" data-value="normal" data-i18n="diffNormal">ปกติ</button>
+          <button class="chip chip-diff" data-value="hard" data-i18n="diffHard">ยาก</button>
+        </div>
+      </div>
+
+      <button class="menu-btn primary" id="setupStartBtn" data-i18n="setupStart">เริ่มการต่อสู้</button>
+      <button class="menu-btn" id="setupBackBtn" data-i18n="back">กลับเมนูหลัก</button>
+    </div>
+  </section>
+
+  <!-- ============ HOW TO PLAY ============ -->
+  <section id="screen-howto" class="screen">
+    <canvas id="bgCanvasHowto" style="display:none;"></canvas>
+    <div class="howto-card">
+      <h2 data-i18n="howtoTitle">วิธีเล่น</h2>
+      <div class="howto-item"><h3 data-i18n="howto1_h">การเคลื่อนที่</h3><p data-i18n="howto1">...</p></div>
+      <div class="howto-item"><h3 data-i18n="howto2_h">วางระเบิด</h3><p data-i18n="howto2">...</p></div>
+      <div class="howto-item"><h3 data-i18n="howto3_h">ไอเทม</h3><p data-i18n="howto3">...</p></div>
+      <div class="howto-item"><h3 data-i18n="howto4_h">ท่อวาร์ป</h3><p data-i18n="howto4">...</p></div>
+      <div class="howto-item"><h3 data-i18n="howto5_h">สายพานลำเลียง</h3><p data-i18n="howto5">...</p></div>
+      <div class="howto-item"><h3 data-i18n="howto6_h">โซนอันตราย</h3><p data-i18n="howto6">...</p></div>
+      <button class="menu-btn primary" id="howtoBackBtn" data-i18n="back">กลับเมนูหลัก</button>
+    </div>
+  </section>
+
+  <!-- ============ GAME ============ -->
+  <section id="screen-game" class="screen">
+    <div id="gameStage">
+      <canvas id="gameCanvas"></canvas>
+      <div class="hud">
+        <div class="hud-left">
+          <div class="hud-chip" id="hudRemaining">Players Remaining: 9 / 9</div>
+          <div class="hud-chip" id="hudScore">Score: 0</div>
+        </div>
+        <div class="hud-right">
+          <div class="hud-chip" id="hudHighScore">High Score: 0</div>
+        </div>
+      </div>
+      <div id="shrinkWarn">ZONE COLLAPSING!</div>
+      <div id="countdownOverlay">3</div>
+      <div class="touch-controls">
+        <div class="dpad">
+          <button class="dpad-btn" id="padUp">▲</button>
+          <button class="dpad-btn" id="padLeft">◀</button>
+          <button class="dpad-btn" id="padRight">▶</button>
+          <button class="dpad-btn" id="padDown">▼</button>
+        </div>
+        <button id="padBomb">BOMB</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ GAME OVER ============ -->
+  <section id="screen-over" class="screen">
+    <div class="over-card">
+      <h2 class="over-title" id="overTitle">VICTORY</h2>
+      <div class="over-stats">
+        <div><span id="overScore">0</span></div>
+        <div data-i18n-prefix="highscore"><span id="overHighScore">0</span></div>
+        <div id="overPlace">Placement: 1 / 9</div>
+        <div id="overKills">Eliminations: 0</div>
+      </div>
+      <div class="btn-row">
+        <button class="menu-btn primary" id="restartBtn" data-i18n="restart">เล่นอีกครั้ง</button>
+        <button class="menu-btn" id="menuBtn" data-i18n="menu">เมนูหลัก</button>
+      </div>
+    </div>
+  </section>
+
+</div>
+<script>
+/* =========================================================================
+   NEON BLAST ROYALE — Bomberman Battle Royale
+   Single-file vanilla JS game engine (grid-based physics, canvas render)
+   ========================================================================= */
+'use strict';
+
+/* ---------------------------------------------------------------------- *
+ * i18n
+ * ---------------------------------------------------------------------- */
+const I18N = {
+  th: {
+    title: 'NEON BLAST',
+    subtitle: 'รอยัลบั้มเบอร์แมนไซเบอร์พังก์',
+    start: 'เริ่มศึกแบทเทิลรอยัล',
+    startSub: '8–10 ผู้เล่น',
+    howto: 'วิธีเล่น',
+    music: 'เพลง Lofi',
+    musicOn: 'เปิด',
+    musicOff: 'ปิด',
+    back: 'กลับเมนูหลัก',
+    howtoTitle: 'วิธีเล่น',
+    howto1_h: 'การเคลื่อนที่',
+    howto1: 'บนคอมพิวเตอร์ใช้ปุ่มลูกศร • บนมือถือใช้จอยเสมือนที่มุมล่างซ้าย',
+    howto2_h: 'วางระเบิด',
+    howto2: 'กด Spacebar หรือแตะปุ่มระเบิดสีม่วงเพื่อวางระเบิด ระวังแรงระเบิดของตัวเอง!',
+    howto3_h: 'ไอเทม',
+    howto3: 'ทำลายกล่องเพื่อหาไอเทมเพิ่มระยะระเบิด และเพิ่มจำนวนระเบิดที่วางได้พร้อมกัน',
+    howto4_h: 'ท่อวาร์ป',
+    howto4: 'พอร์ทัลไซเบอร์พังก์ที่ส่งตัวคุณ (หรือระเบิด) ไปยังอีกมุมหนึ่งของแผนที่ทันที',
+    howto5_h: 'สายพานลำเลียง',
+    howto5: 'พื้นที่ที่ดันผู้เล่นและระเบิดที่วางอยู่ให้เคลื่อนไปตามทิศทางอัตโนมัติ',
+    howto6_h: 'โซนอันตราย (Sudden Death)',
+    howto6: 'เมื่อเวลาผ่านไปหรือผู้เล่นเหลือน้อย ขอบแผนที่จะพังถล่มเข้ามาเรื่อย ๆ อยู่นอกโซนคือความตาย รอดให้ถึงคนสุดท้าย!',
+    remaining: 'ผู้เล่นที่เหลือ',
+    score: 'คะแนน',
+    highscore: 'คะแนนสูงสุด',
+    ready: 'เตรียมตัว',
+    go: 'ไป!',
+    victory: 'คุณคือผู้ชนะ!',
+    eliminated: 'คุณถูกกำจัด',
+    place: 'อันดับที่',
+    restart: 'เล่นอีกครั้ง',
+    menu: 'เมนูหลัก',
+    shrinkWarn: 'โซนกำลังถล่ม!',
+    kills: 'จำนวนที่กำจัด',
+    setupTitle: 'ตั้งค่าการต่อสู้',
+    modeTitle: 'โหมดเกม',
+    modeRoyale: 'แบทเทิลรอยัล',
+    modeRoyaleDesc: 'แผนที่ใหญ่ • 9 ผู้เล่น • มีหมอกบังสายตา ต้องระวังศัตรูที่ซุ่มอยู่',
+    modeClear: 'มองเห็นทั่วกระดาน',
+    modeClearDesc: 'แผนที่ขนาดกลาง • 4 ผู้เล่น • ไม่มีหมอก เห็นทุกตัวละครตลอดเวลา',
+    diffTitle: 'ระดับความยาก',
+    diffEasy: 'ง่าย',
+    diffNormal: 'ปกติ',
+    diffHard: 'ยาก',
+    setupStart: 'เริ่มการต่อสู้',
+  },
+  en: {
+    title: 'NEON BLAST',
+    subtitle: 'Cyberpunk Bomberman Royale',
+    start: 'Start Battle Royale',
+    startSub: '8–10 Players',
+    howto: 'How to Play',
+    music: 'Lofi Music',
+    musicOn: 'On',
+    musicOff: 'Off',
+    back: 'Back to Menu',
+    howtoTitle: 'How to Play',
+    howto1_h: 'Movement',
+    howto1: 'Desktop: Arrow keys • Mobile: virtual D-pad, bottom-left',
+    howto2_h: 'Place Bombs',
+    howto2: 'Press Spacebar or tap the purple bomb button. Watch your own blast radius!',
+    howto3_h: 'Power-ups',
+    howto3: 'Destroy crates to reveal items: bigger blast range and more simultaneous bombs.',
+    howto4_h: 'Warp Pipes',
+    howto4: 'Cyberpunk portals that instantly warp you (or bombs) to another corner of the map.',
+    howto5_h: 'Conveyor Belts',
+    howto5: 'Moving floor zones that automatically push players and live bombs in one direction.',
+    howto6_h: 'Sudden Death',
+    howto6: 'As time runs out or few players remain, the outer map collapses inward. Stay inside the safe zone — be the last one standing!',
+    remaining: 'Players Remaining',
+    score: 'Score',
+    highscore: 'High Score',
+    ready: 'Get Ready',
+    go: 'GO!',
+    victory: 'VICTORY ROYALE!',
+    eliminated: 'YOU WERE ELIMINATED',
+    place: 'Placement',
+    restart: 'Play Again',
+    menu: 'Main Menu',
+    shrinkWarn: 'ZONE COLLAPSING!',
+    kills: 'Eliminations',
+    setupTitle: 'Battle Setup',
+    modeTitle: 'Game Mode',
+    modeRoyale: 'Battle Royale',
+    modeRoyaleDesc: 'Large map • 9 players • Fog of war — watch for enemies lurking nearby',
+    modeClear: 'Clear Vision',
+    modeClearDesc: 'Medium map • 4 players • No fog — see every character at all times',
+    diffTitle: 'Difficulty',
+    diffEasy: 'Easy',
+    diffNormal: 'Normal',
+    diffHard: 'Hard',
+    setupStart: 'Start Battle',
+  }
+};
+let LANG = 'th';
+function t(key) { return I18N[LANG][key] || key; }
+function applyI18n() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    el.textContent = t(el.getAttribute('data-i18n'));
+  });
+  document.documentElement.lang = LANG;
+}
+
+/* ---------------------------------------------------------------------- *
+ * Constants (some become mutable — reconfigured per match by mode/difficulty)
+ * ---------------------------------------------------------------------- */
+const TILE = 40;
+let COLS = 27;
+let ROWS = 19;
+let PLAYER_COUNT = 9; // 1 human + N bots
+const BOMB_FUSE = 2300;
+const CHAIN_FUSE = 120;
+const EXPLOSION_LIFE = 500;
+const PLAYER_RADIUS = 13;
+const BASE_SPEED = 132; // px/sec
+let ITEM_DROP_CHANCE = 0.32;
+let SHRINK_START_TIME = 55000; // ms — time-based shrink trigger
+let SHRINK_START_MAX_PLAYERS = 4; // remaining-players-based shrink trigger
+let MIN_SHRINK_ELAPSED = 22000; // ms — shrink can never start before this, however few players remain
+const SHRINK_INTERVAL = 2400; // ms per random-chunk collapse cycle (a ring takes ~2 cycles to fully close)
+const SHRINK_WARN_TIME = 1100; // ms telegraph before ring solidifies
+
+/* Mode presets: map size, player count, fog-of-war on/off, camera behavior */
+const MODE_PRESETS = {
+  royale: {
+    cols: 27, rows: 19, playerCount: 9, fog: true, cameraMode: 'follow', zoom: 1.55,
+  },
+  clearvision: {
+    cols: 17, rows: 13, playerCount: 4, fog: false, cameraMode: 'overview', zoom: 1.0,
+  },
+};
+
+/* Difficulty presets: bot reaction speed, aggression, item frequency, shrink pacing, vision */
+const DIFFICULTY_PRESETS = {
+  easy: {
+    aiDecisionMin: 0.42, aiDecisionMax: 0.75, bombChance: 0.26, speedMult: 0.86,
+    itemDropChance: 0.42, shrinkStartTime: 78000, shrinkMaxPlayers: 2, fogRadiusTiles: 7.2,
+  },
+  normal: {
+    aiDecisionMin: 0.3, aiDecisionMax: 0.55, bombChance: 0.4, speedMult: 1.0,
+    itemDropChance: 0.32, shrinkStartTime: 60000, shrinkMaxPlayers: 3, fogRadiusTiles: 5.6,
+  },
+  hard: {
+    aiDecisionMin: 0.16, aiDecisionMax: 0.32, bombChance: 0.56, speedMult: 1.14,
+    itemDropChance: 0.24, shrinkStartTime: 46000, shrinkMaxPlayers: 3, fogRadiusTiles: 4.6,
+  },
+};
+
+// Tile types
+const T_FLOOR = 0, T_WALL = 1, T_BLOCK = 2, T_WARP = 3, T_BELT = 4, T_VOID = 5;
+
+const DIRS = {
+  up:    { x: 0, y: -1 },
+  down:  { x: 0, y: 1 },
+  left:  { x: -1, y: 0 },
+  right: { x: 1, y: 0 },
+};
+
+const BOT_COLORS = [
+  '#f472b6', '#38bdf8', '#facc15', '#4ade80',
+  '#fb923c', '#c084fc', '#2dd4bf', '#f87171', '#818cf8'
+];
+const HUMAN_COLOR = '#e879f9';
+
+/* ---------------------------------------------------------------------- *
+ * Audio — fully synthesized, no external assets
+ * ---------------------------------------------------------------------- */
+const AudioSys = (() => {
+  let ctx = null;
+  let musicOn = false;
+  let musicNodes = null;
+  let masterGain = null;
+
+  function ensureCtx() {
+    if (!ctx) {
+      ctx = new (window.AudioContext || window.webkitAudioContext)();
+      masterGain = ctx.createGain();
+      masterGain.gain.value = 0.55;
+      masterGain.connect(ctx.destination);
+    }
+    if (ctx.state === 'suspended') ctx.resume();
+    return ctx;
+  }
+
+  function blip({ freq = 440, dur = 0.12, type = 'square', gain = 0.18, slideTo = null, delay = 0 }) {
+    const c = ensureCtx();
+    const osc = c.createOscillator();
+    const g = c.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, c.currentTime + delay);
+    if (slideTo) osc.frequency.exponentialRampToValueAtTime(Math.max(20, slideTo), c.currentTime + delay + dur);
+    g.gain.setValueAtTime(gain, c.currentTime + delay);
+    g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + delay + dur);
+    osc.connect(g); g.connect(masterGain);
+    osc.start(c.currentTime + delay);
+    osc.stop(c.currentTime + delay + dur + 0.02);
+  }
+
+  function noiseBurst({ dur = 0.35, gain = 0.35, delay = 0, filterFreq = 1200 }) {
+    const c = ensureCtx();
+    const bufSize = Math.floor(c.sampleRate * dur);
+    const buf = c.createBuffer(1, bufSize, c.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < bufSize; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / bufSize);
+    const src = c.createBufferSource();
+    src.buffer = buf;
+    const filt = c.createBiquadFilter();
+    filt.type = 'lowpass';
+    filt.frequency.setValueAtTime(filterFreq, c.currentTime + delay);
+    filt.frequency.exponentialRampToValueAtTime(80, c.currentTime + delay + dur);
+    const g = c.createGain();
+    g.gain.setValueAtTime(gain, c.currentTime + delay);
+    g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + delay + dur);
+    src.connect(filt); filt.connect(g); g.connect(masterGain);
+    src.start(c.currentTime + delay);
+  }
+
+  const sfx = {
+    place() { blip({ freq: 220, slideTo: 140, dur: 0.09, type: 'square', gain: 0.14 }); },
+    explode() {
+      noiseBurst({ dur: 0.42, gain: 0.4, filterFreq: 1600 });
+      blip({ freq: 90, slideTo: 40, dur: 0.3, type: 'sawtooth', gain: 0.22 });
+    },
+    pickup() {
+      blip({ freq: 520, slideTo: 880, dur: 0.09, type: 'triangle', gain: 0.16 });
+      blip({ freq: 880, dur: 0.1, type: 'triangle', gain: 0.12, delay: 0.08 });
+    },
+    warp() {
+      blip({ freq: 1200, slideTo: 300, dur: 0.28, type: 'sine', gain: 0.18 });
+      blip({ freq: 300, slideTo: 1200, dur: 0.28, type: 'sine', gain: 0.1, delay: 0.03 });
+    },
+    death() { blip({ freq: 300, slideTo: 40, dur: 0.5, type: 'sawtooth', gain: 0.2 }); },
+    countdown() { blip({ freq: 660, dur: 0.15, type: 'square', gain: 0.18 }); },
+    go() { blip({ freq: 440, slideTo: 990, dur: 0.35, type: 'square', gain: 0.22 }); },
+    warn() { blip({ freq: 200, dur: 0.2, type: 'square', gain: 0.16 }); },
+    victory() {
+      [523, 659, 784, 1046].forEach((f, i) => blip({ freq: f, dur: 0.25, type: 'triangle', gain: 0.2, delay: i * 0.13 }));
+    },
+  };
+
+  // Simple generative lofi pad + soft noise crackle loop
+  let loopTimer = null;
+  const CHORDS = [
+    [220.0, 261.63, 329.63], // Am
+    [174.61, 220.0, 261.63], // F
+    [196.0, 246.94, 293.66], // Cish
+    [164.81, 196.0, 246.94], // Dm-ish
+  ];
+  function startMusic() {
+    if (musicOn) return;
+    musicOn = true;
+    const c = ensureCtx();
+    let chordIdx = 0;
+    function playChord() {
+      if (!musicOn) return;
+      const chord = CHORDS[chordIdx % CHORDS.length];
+      chordIdx++;
+      chord.forEach((f, i) => {
+        const osc = c.createOscillator();
+        const g = c.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = f / 2;
+        g.gain.setValueAtTime(0, c.currentTime);
+        g.gain.linearRampToValueAtTime(0.05, c.currentTime + 1.2);
+        g.gain.linearRampToValueAtTime(0, c.currentTime + 3.6);
+        osc.connect(g); g.connect(masterGain);
+        osc.start(c.currentTime);
+        osc.stop(c.currentTime + 3.7);
+      });
+      // soft vinyl crackle
+      noiseBurst({ dur: 3.4, gain: 0.02, filterFreq: 4000 });
+      loopTimer = setTimeout(playChord, 3600);
+    }
+    playChord();
+  }
+  function stopMusic() {
+    musicOn = false;
+    if (loopTimer) clearTimeout(loopTimer);
+    loopTimer = null;
+  }
+  function toggleMusic() {
+    ensureCtx();
+    if (musicOn) stopMusic(); else startMusic();
+    return musicOn;
+  }
+  function isMusicOn() { return musicOn; }
+  function unlock() { ensureCtx(); }
+
+  return { sfx, toggleMusic, isMusicOn, unlock };
+})();
+
+/* ---------------------------------------------------------------------- *
+ * Map generation
+ * ---------------------------------------------------------------------- */
+function inBounds(gx, gy) { return gx >= 0 && gy >= 0 && gx < COLS && gy < ROWS; }
+
+function generateMap() {
+  const grid = [];
+  for (let y = 0; y < ROWS; y++) {
+    const row = [];
+    for (let x = 0; x < COLS; x++) {
+      if (x === 0 || y === 0 || x === COLS - 1 || y === ROWS - 1) row.push({ type: T_WALL });
+      else if (x % 2 === 0 && y % 2 === 0) row.push({ type: T_WALL });
+      else row.push({ type: T_FLOOR });
+    }
+    grid.push(row);
+  }
+
+  // Spawn corners kept clear (radius L-shape) for up to 4 corners + edges
+  const spawnPoints = [
+    { x: 1, y: 1 }, { x: COLS - 2, y: 1 },
+    { x: 1, y: ROWS - 2 }, { x: COLS - 2, y: ROWS - 2 },
+    { x: Math.floor(COLS / 2), y: 1 }, { x: Math.floor(COLS / 2), y: ROWS - 2 },
+    { x: 1, y: Math.floor(ROWS / 2) }, { x: COLS - 2, y: Math.floor(ROWS / 2) },
+    { x: Math.floor(COLS / 2), y: Math.floor(ROWS / 2) },
+  ];
+  const clearSet = new Set();
+  spawnPoints.forEach(p => {
+    [[0,0],[1,0],[-1,0],[0,1],[0,-1]].forEach(([dx,dy]) => {
+      const gx = p.x + dx, gy = p.y + dy;
+      if (inBounds(gx, gy)) clearSet.add(gx + ',' + gy);
+    });
+  });
+
+  // Scatter destructible blocks
+  for (let y = 1; y < ROWS - 1; y++) {
+    for (let x = 1; x < COLS - 1; x++) {
+      if (grid[y][x].type !== T_FLOOR) continue;
+      if (clearSet.has(x + ',' + y)) continue;
+      if (Math.random() < 0.62) grid[y][x] = { type: T_BLOCK, item: rollItem() };
+    }
+  }
+
+  // Warp pipe pairs (2 pairs = 4 pipes) placed on floor tiles away from spawns
+  const floorCandidates = [];
+  for (let y = 1; y < ROWS - 1; y++)
+    for (let x = 1; x < COLS - 1; x++)
+      if (grid[y][x].type === T_FLOOR && !clearSet.has(x + ',' + y)) floorCandidates.push({ x, y });
+  shuffle(floorCandidates);
+  let pairId = 0;
+  for (let i = 0; i < 2 && floorCandidates.length >= 2; i++) {
+    const a = floorCandidates.pop();
+    const b = floorCandidates.pop();
+    grid[a.y][a.x] = { type: T_WARP, pair: pairId };
+    grid[b.y][b.x] = { type: T_WARP, pair: pairId };
+    pairId++;
+  }
+
+  // Conveyor belt runs (short straight strips)
+  const beltDirs = ['up', 'down', 'left', 'right'];
+  for (let i = 0; i < 5; i++) {
+    if (!floorCandidates.length) break;
+    const start = floorCandidates.pop();
+    if (!start || grid[start.y][start.x].type !== T_FLOOR) continue;
+    const dir = beltDirs[Math.floor(Math.random() * beltDirs.length)];
+    const d = DIRS[dir];
+    let cx = start.x, cy = start.y;
+    const len = 2 + Math.floor(Math.random() * 3);
+    for (let s = 0; s < len; s++) {
+      if (!inBounds(cx, cy) || grid[cy][cx].type !== T_FLOOR) break;
+      grid[cy][cx] = { type: T_BELT, dir };
+      cx += d.x; cy += d.y;
+    }
+  }
+
+  return { grid, spawnPoints };
+}
+
+function rollItem() {
+  if (Math.random() > ITEM_DROP_CHANCE) return null;
+  return Math.random() < 0.55 ? 'range' : 'bomb';
+}
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+
+/* ---------------------------------------------------------------------- *
+ * BFS pathfinding helper (used sparingly by AI, grid is small)
+ * ---------------------------------------------------------------------- */
+function bfsDirection(game, fromGx, fromGy, isGoal, avoidTiles) {
+  const key = (x, y) => x + ',' + y;
+  const visited = new Set([key(fromGx, fromGy)]);
+  const queue = [{ x: fromGx, y: fromGy, first: null }];
+  let head = 0;
+  while (head < queue.length) {
+    const cur = queue[head++];
+    if (head > 1 && isGoal(cur.x, cur.y)) return cur.first;
+    for (const dname of ['up', 'down', 'left', 'right']) {
+      const d = DIRS[dname];
+      const nx = cur.x + d.x, ny = cur.y + d.y;
+      if (!inBounds(nx, ny)) continue;
+      const k = key(nx, ny);
+      if (visited.has(k)) continue;
+      const tile = game.grid[ny][nx];
+      if (tile.type === T_WALL) continue;
+      if (avoidTiles && avoidTiles.has(k)) continue;
+      const passable = tile.type === T_FLOOR || tile.type === T_WARP || tile.type === T_BELT ||
+                        (tile.type === T_BLOCK && isGoal(nx, ny));
+      if (!passable) continue;
+      visited.add(k);
+      queue.push({ x: nx, y: ny, first: cur.first || dname });
+    }
+    if (queue.length > 900) break; // safety cap
+  }
+  return null;
+}
+
+/* ---------------------------------------------------------------------- *
+ * Entities
+ * ---------------------------------------------------------------------- */
+let nextEntityId = 1;
+
+function makePlayer(gx, gy, isHuman, color, name, speedMult) {
+  return {
+    id: nextEntityId++,
+    isHuman,
+    name,
+    color,
+    x: gx * TILE + TILE / 2,
+    y: gy * TILE + TILE / 2,
+    dir: 'down',
+    moving: false,
+    alive: true,
+    speed: BASE_SPEED * (speedMult || 1),
+    bombsMax: 1,
+    bombsActive: 0,
+    range: 1,
+    warpCooldown: 0,
+    animT: 0,
+    deathT: 0,
+    kills: 0,
+    place: null,
+    aiTimer: 0,
+    aiDir: null,
+    aiTarget: null,
+  };
+}
+
+function gridOf(px, py) { return { x: Math.floor(px / TILE), y: Math.floor(py / TILE) }; }
+
+/* ---------------------------------------------------------------------- *
+ * Game state
+ * ---------------------------------------------------------------------- */
+function newGame(config) {
+  config = config || {};
+  const modeKey = config.mode && MODE_PRESETS[config.mode] ? config.mode : 'royale';
+  const diffKey = config.difficulty && DIFFICULTY_PRESETS[config.difficulty] ? config.difficulty : 'normal';
+  const mode = MODE_PRESETS[modeKey];
+  const diff = DIFFICULTY_PRESETS[diffKey];
+
+  // reconfigure mutable globals for this match
+  COLS = mode.cols;
+  ROWS = mode.rows;
+  PLAYER_COUNT = mode.playerCount;
+  ITEM_DROP_CHANCE = diff.itemDropChance;
+  SHRINK_START_TIME = diff.shrinkStartTime;
+  SHRINK_START_MAX_PLAYERS = diff.shrinkMaxPlayers;
+
+  const { grid, spawnPoints } = generateMap();
+  const game = {
+    grid,
+    bombs: [],
+    explosions: [],   // {x,y,life,maxLife}
+    items: [],        // {x,y,type}
+    players: [],
+    state: 'countdown', // countdown -> playing -> ended
+    countdown: 3.999,
+    elapsed: 0,
+    modeKey, diffKey,
+    fog: mode.fog,
+    cameraMode: mode.cameraMode,
+    aiParams: {
+      decisionMin: diff.aiDecisionMin, decisionMax: diff.aiDecisionMax,
+      bombChance: diff.bombChance, speedMult: diff.speedMult,
+    },
+    shrink: {
+      active: false,
+      ring: 0,          // how many rings already fully collapsed
+      ringRemaining: [], // tiles of the current ring not yet collapsed (random subset collapses each cycle)
+      timer: 0,
+      warnTiles: [],    // tiles currently telegraphing before collapse
+      warning: false,
+    },
+    camera: { x: (mode.cols * TILE) / 2, y: (mode.rows * TILE) / 2, zoom: mode.zoom },
+    fogRadius: diff.fogRadiusTiles * TILE,
+    shakeT: 0,
+    ended: null, // {result:'victory'|'eliminated', place, score}
+    score: 0,
+  };
+
+  shuffle(spawnPoints);
+  const names = ['CIPHER', 'GLITCH', 'RAZOR', 'NEXUS', 'VIPER', 'ECHO', 'HAVOC', 'RUNE', 'PULSE'];
+  for (let i = 0; i < PLAYER_COUNT; i++) {
+    const sp = spawnPoints[i % spawnPoints.length];
+    const isHuman = i === 0;
+    const p = makePlayer(
+      sp.x, sp.y, isHuman,
+      isHuman ? HUMAN_COLOR : BOT_COLORS[i % BOT_COLORS.length],
+      isHuman ? 'YOU' : names[i % names.length],
+      isHuman ? 1 : diff.speedMult
+    );
+    game.players.push(p);
+  }
+  return game;
+}
+
+function alivePlayers(game) { return game.players.filter(p => p.alive); }
+
+/* ---------------------------------------------------------------------- *
+ * Tile helpers
+ * ---------------------------------------------------------------------- */
+function tileAt(game, gx, gy) {
+  if (!inBounds(gx, gy)) return { type: T_WALL };
+  return game.grid[gy][gx];
+}
+function isSolidForMove(game, gx, gy, ignoreBombGX, ignoreBombGY) {
+  const tile = tileAt(game, gx, gy);
+  if (tile.type === T_WALL || tile.type === T_BLOCK || tile.type === T_VOID) return true;
+  const bomb = game.bombs.find(b => b.gx === gx && b.gy === gy && !b.exploded);
+  if (bomb) {
+    if (ignoreBombGX === gx && ignoreBombGY === gy) return false;
+    return true;
+  }
+  return false;
+}
+
+/* ---------------------------------------------------------------------- *
+ * Movement / physics (AABB vs grid, corner-based)
+ * ---------------------------------------------------------------------- */
+function tryMove(game, entity, dx, dy, dt) {
+  if (dx === 0 && dy === 0) return;
+  const speed = entity.speed;
+  let nx = entity.x + dx * speed * dt;
+  let ny = entity.y + dy * speed * dt;
+  const r = PLAYER_RADIUS;
+  const originGX = gridOf(entity.x, entity.y).x, originGY = gridOf(entity.x, entity.y).y;
+
+  // Move X
+  if (dx !== 0) {
+    const testX = nx + Math.sign(dx) * r;
+    const cornerYs = [entity.y - r + 1, entity.y + r - 1];
+    let blocked = false;
+    for (const cy of cornerYs) {
+      const g = gridOf(testX, cy);
+      if (isSolidForMove(game, g.x, g.y, originGX, originGY)) { blocked = true; break; }
+    }
+    if (!blocked) entity.x = nx;
+  }
+  // Move Y
+  if (dy !== 0) {
+    const testY = ny + Math.sign(dy) * r;
+    const cornerXs = [entity.x - r + 1, entity.x + r - 1];
+    let blocked = false;
+    for (const cx of cornerXs) {
+      const g = gridOf(cx, testY);
+      if (isSolidForMove(game, g.x, g.y, originGX, originGY)) { blocked = true; break; }
+    }
+    if (!blocked) entity.y = ny;
+  }
+}
+
+function applyBeltAndWarp(game, entity, dt) {
+  const g = gridOf(entity.x, entity.y);
+  const tile = tileAt(game, g.x, g.y);
+  if (tile.type === T_BELT) {
+    const d = DIRS[tile.dir];
+    entity.x += d.x * 70 * dt;
+    entity.y += d.y * 70 * dt;
+  } else if (tile.type === T_WARP && entity.warpCooldown <= 0) {
+    // find partner
+    for (let y = 0; y < ROWS; y++) {
+      for (let x = 0; x < COLS; x++) {
+        const cell = game.grid[y][x];
+        if (cell.type === T_WARP && cell.pair === tile.pair && !(x === g.x && y === g.y)) {
+          entity.x = x * TILE + TILE / 2;
+          entity.y = y * TILE + TILE / 2;
+          entity.warpCooldown = 0.6;
+          if (entity.isHuman) AudioSys.sfx.warp();
+          return;
+        }
+      }
+    }
+  }
+  if (entity.warpCooldown > 0) entity.warpCooldown -= dt;
+}
+
+/* ---------------------------------------------------------------------- *
+ * Bombs & explosions
+ * ---------------------------------------------------------------------- */
+function placeBomb(game, entity) {
+  if (!entity.alive) return;
+  if (entity.bombsActive >= entity.bombsMax) return;
+  const g = gridOf(entity.x, entity.y);
+  if (game.bombs.some(b => b.gx === g.x && b.gy === g.y)) return;
+  if (tileAt(game, g.x, g.y).type !== T_FLOOR && tileAt(game, g.x, g.y).type !== T_BELT) return;
+  game.bombs.push({ gx: g.x, gy: g.y, timer: BOMB_FUSE, range: entity.range, owner: entity.id, exploded: false, scale: 1 });
+  entity.bombsActive++;
+  if (entity.isHuman) AudioSys.sfx.place();
+}
+
+function computeBlastTiles(game, gx, gy, range) {
+  const tiles = [{ x: gx, y: gy }];
+  for (const dname of ['up', 'down', 'left', 'right']) {
+    const d = DIRS[dname];
+    for (let s = 1; s <= range; s++) {
+      const bx = gx + d.x * s, by = gy + d.y * s;
+      if (!inBounds(bx, by)) break;
+      const tile = game.grid[by][bx];
+      if (tile.type === T_WALL) break;
+      tiles.push({ x: bx, y: by });
+      if (tile.type === T_BLOCK) break;
+    }
+  }
+  return tiles;
+}
+
+function explodeBomb(game, bomb) {
+  if (bomb.exploded) return;
+  bomb.exploded = true;
+  const owner = game.players.find(p => p.id === bomb.owner);
+  if (owner) owner.bombsActive = Math.max(0, owner.bombsActive - 1);
+
+  const tiles = computeBlastTiles(game, bomb.gx, bomb.gy, bomb.range);
+  const now = performance.now();
+  tiles.forEach(pos => {
+    game.explosions.push({ x: pos.x, y: pos.y, life: EXPLOSION_LIFE, maxLife: EXPLOSION_LIFE });
+    const tile = game.grid[pos.y][pos.x];
+    if (tile.type === T_BLOCK) {
+      if (tile.item) game.items.push({ x: pos.x, y: pos.y, type: tile.item });
+      game.grid[pos.y][pos.x] = { type: T_FLOOR };
+    }
+    // chain other bombs
+    game.bombs.forEach(b => {
+      if (!b.exploded && b.gx === pos.x && b.gy === pos.y) b.timer = Math.min(b.timer, CHAIN_FUSE);
+    });
+  });
+  game.shakeT = 0.28;
+  if (owner && owner.isHuman) AudioSys.sfx.explode();
+  else if (game.players.some(p => p.isHuman && p.alive && dist(p, bomb) < 8 * TILE)) AudioSys.sfx.explode();
+
+  // Damage players
+  const blastSet = new Set(tiles.map(p => p.x + ',' + p.y));
+  game.players.forEach(p => {
+    if (!p.alive) return;
+    const g = gridOf(p.x, p.y);
+    if (blastSet.has(g.x + ',' + g.y)) killPlayer(game, p, owner);
+  });
+}
+
+function dist(a, b) {
+  const ax = a.x !== undefined ? a.x : a.gx * TILE;
+  const ay = a.y !== undefined ? a.y : a.gy * TILE;
+  return Math.hypot(ax - (b.x !== undefined ? b.x : b.gx * TILE), ay - (b.y !== undefined ? b.y : b.gy * TILE));
+}
+
+function killPlayer(game, p, killer) {
+  if (!p.alive) return;
+  p.alive = false;
+  p.deathT = 0;
+  if (killer && killer.id !== p.id && killer.alive) killer.kills++;
+  if (p.isHuman) AudioSys.sfx.death();
+  const remaining = alivePlayers(game);
+  p.place = remaining.length + 1;
+}
+
+/* ---------------------------------------------------------------------- *
+ * Item pickup
+ * ---------------------------------------------------------------------- */
+function checkItemPickup(game, entity) {
+  const g = gridOf(entity.x, entity.y);
+  const idx = game.items.findIndex(it => it.x === g.x && it.y === g.y);
+  if (idx === -1) return;
+  const item = game.items[idx];
+  if (item.type === 'range') entity.range = Math.min(8, entity.range + 1);
+  else if (item.type === 'bomb') entity.bombsMax = Math.min(6, entity.bombsMax + 1);
+  game.items.splice(idx, 1);
+  if (entity.isHuman) AudioSys.sfx.pickup();
+}
+
+/* ---------------------------------------------------------------------- *
+ * AI Bots
+ * ---------------------------------------------------------------------- */
+function dangerTilesNear(game, urgentOnly) {
+  // returns Set of "x,y" tiles inside a live bomb's blast footprint.
+  // urgentOnly=true -> only bombs about to go off very soon (used to decide whether a
+  //   bot MUST flee right now, and as the avoid-set while actually fleeing).
+  // urgentOnly=false -> every live bomb regardless of fuse (used only as a soft steer-away
+  //   preference during normal wandering/seeking, never as a hard block for escape paths —
+  //   otherwise, with several bots bombing at once, "avoid every live bomb" can blanket the
+  //   whole reachable area and leave bots with no legal path, i.e. frozen in place).
+  const set = new Set();
+  game.bombs.forEach(b => {
+    if (b.exploded) return;
+    if (urgentOnly && b.timer > 900) return;
+    computeBlastTiles(game, b.gx, b.gy, b.range).forEach(t => set.add(t.x + ',' + t.y));
+  });
+  return set;
+}
+
+// Finds an escape direction assuming a bomb with `range` were placed at (gx,gy) right now.
+// The bot necessarily has to walk *through* the near part of its own blast footprint to
+// clear it (it starts standing in the middle of it) — so only pre-existing danger from
+// other live bombs is avoided during the search; the goal is simply to reach a tile
+// outside this bomb's blast pattern before it detonates.
+function findEscapeDir(game, gx, gy, range, existingDanger) {
+  const hypothetical = new Set(computeBlastTiles(game, gx, gy, range).map(t => t.x + ',' + t.y));
+  return bfsDirection(game, gx, gy, (x, y) => !hypothetical.has(x + ',' + y), existingDanger);
+}
+
+// Returns a walkable direction picked at random from the bot's currently-open
+// neighbor tiles (never a wall/block/bomb) — used as a safe fallback so bots don't
+// freeze in place trying to walk into an obstacle over and over.
+function randomOpenDir(game, gx, gy) {
+  const options = ['up', 'down', 'left', 'right'].filter(dn => {
+    const d = DIRS[dn];
+    return !isSolidForMove(game, gx + d.x, gy + d.y, gx, gy);
+  });
+  if (!options.length) return null;
+  return options[Math.floor(Math.random() * options.length)];
+}
+
+// Does the bot have a clear, unobstructed bomb-range shot at an enemy sharing its
+// row or column right now? Used for ambush/sniping instead of only bombing when
+// literally standing next to a target.
+function lineOfSightShot(game, gx, gy, range, enemies) {
+  for (const e of enemies) {
+    const eg = gridOf(e.x, e.y);
+    if (eg.x !== gx && eg.y !== gy) continue;
+    const dxSign = Math.sign(eg.x - gx), dySign = Math.sign(eg.y - gy);
+    const steps = Math.max(Math.abs(eg.x - gx), Math.abs(eg.y - gy));
+    if (steps === 0 || steps > range) continue;
+    let blocked = false;
+    for (let s = 1; s < steps; s++) {
+      const tx = gx + dxSign * s, ty = gy + dySign * s;
+      const tile = tileAt(game, tx, ty);
+      if (tile.type === T_WALL || tile.type === T_BLOCK) { blocked = true; break; }
+    }
+    if (!blocked) return e;
+  }
+  return null;
+}
+
+function updateAI(game, bot, dt) {
+  bot.aiTimer -= dt;
+  const g = gridOf(bot.x, bot.y);
+  const urgent = dangerTilesNear(game, true);   // must-flee-now bombs
+  const soft = dangerTilesNear(game, false);    // every live bomb — soft steer-away only
+  const ai = game.aiParams;
+
+  // React the instant a bot finds itself standing in an imminent blast footprint,
+  // instead of waiting up to its normal decision interval — chain reactions can go
+  // off in ~120ms.
+  const inDanger = urgent.has(g.x + ',' + g.y);
+  if (inDanger && !bot.wasInDanger) bot.aiTimer = 0;
+  bot.wasInDanger = inDanger;
+
+  if (bot.aiTimer <= 0 || bot.aiDir === null) {
+    bot.aiTimer = ai.decisionMin + Math.random() * (ai.decisionMax - ai.decisionMin);
+
+    if (inDanger) {
+      // Flee using only the urgent set as the avoid-wall — a bot in danger needs to be
+      // free to cross a merely-soft-hazard tile if that's the fastest way clear; refusing
+      // to ever step near any live bomb (however distant its fuse) is what left bots stuck.
+      let dir = bfsDirection(game, g.x, g.y, (x, y) => !urgent.has(x + ',' + y), urgent);
+      bot.aiDir = dir || randomOpenDir(game, g.x, g.y);
+    } else {
+      const enemies = game.players.filter(p => p.alive && p.id !== bot.id);
+      const adjBlock = ['up','down','left','right'].some(dn => {
+        const d = DIRS[dn]; const t = tileAt(game, g.x + d.x, g.y + d.y);
+        return t.type === T_BLOCK;
+      });
+      // Ambush: a lined-up, unobstructed shot at an enemy within bomb range takes
+      // priority over chasing blocks — this is the "cut them off" behavior bots lacked.
+      const shotTarget = lineOfSightShot(game, g.x, g.y, bot.range, enemies);
+      const nearbyEnemy = shotTarget || enemies.find(p => dist(p, bot) < TILE * 1.6);
+
+      let placedAndFleeing = false;
+      if ((shotTarget || adjBlock || nearbyEnemy) && bot.bombsActive < bot.bombsMax && Math.random() < (shotTarget ? Math.min(1, ai.bombChance + 0.35) : ai.bombChance)) {
+        const escapeDir = findEscapeDir(game, g.x, g.y, bot.range, urgent);
+        if (escapeDir) {
+          placeBomb(game, bot);
+          bot.aiDir = escapeDir;
+          placedAndFleeing = true;
+        }
+      }
+      if (!placedAndFleeing) {
+        // Predictive cut-off: if an enemy is closing in, try to path toward a tile
+        // slightly ahead of their current heading rather than straight at them, so
+        // the bot tends to intercept rather than tail-chase.
+        let dir = null;
+        const closest = enemies.reduce((best, p) => {
+          const d = dist(p, bot);
+          return (!best || d < best.d) ? { p, d } : best;
+        }, null);
+        if (closest && closest.d < TILE * 7 && closest.p.moving) {
+          const pd = DIRS[closest.p.dir] || { x: 0, y: 0 };
+          const pg = gridOf(closest.p.x, closest.p.y);
+          const leadX = pg.x + pd.x * 2, leadY = pg.y + pd.y * 2;
+          if (inBounds(leadX, leadY) && tileAt(game, leadX, leadY).type !== T_WALL) {
+            dir = bfsDirection(game, g.x, g.y, (x, y) => x === leadX && y === leadY, soft);
+          }
+        }
+        // seek nearest destructible block, else nearest alive enemy directly — prefer
+        // routes that dodge live bomb zones (soft), but fall back to ignoring that
+        // preference entirely rather than give up and leave the bot standing still.
+        if (!dir) dir = bfsDirection(game, g.x, g.y, (x, y) => tileAt(game, x, y).type === T_BLOCK, soft);
+        if (!dir) dir = bfsDirection(game, g.x, g.y, (x, y) => tileAt(game, x, y).type === T_BLOCK, urgent);
+        if (!dir && closest) {
+          const tg = gridOf(closest.p.x, closest.p.y);
+          dir = bfsDirection(game, g.x, g.y, (x, y) => x === tg.x && y === tg.y, soft);
+          if (!dir) dir = bfsDirection(game, g.x, g.y, (x, y) => x === tg.x && y === tg.y, urgent);
+        }
+        bot.aiDir = dir || randomOpenDir(game, g.x, g.y);
+      }
+    }
+  }
+
+  const d = bot.aiDir ? DIRS[bot.aiDir] : null;
+  if (d) {
+    const prevX = bot.x, prevY = bot.y;
+    tryMove(game, bot, d.x, d.y, dt);
+    bot.dir = bot.aiDir;
+    bot.moving = true;
+    // If a chosen direction turns out blocked (e.g. another bot/wall shifted since
+    // the decision was made), don't sit frozen until the next decision tick — pick
+    // a fresh open direction immediately instead.
+    const moved = Math.abs(bot.x - prevX) > 0.05 || Math.abs(bot.y - prevY) > 0.05;
+    if (!moved) {
+      const alt = randomOpenDir(game, g.x, g.y);
+      if (alt) bot.aiDir = alt;
+      else bot.moving = false;
+    }
+  } else {
+    bot.moving = false;
+  }
+}
+function randomDir() {
+  const arr = ['up', 'down', 'left', 'right'];
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+/* ---------------------------------------------------------------------- *
+ * Shrink / Sudden-death mechanic
+ * ---------------------------------------------------------------------- */
+function updateShrink(game, dt) {
+  const s = game.shrink;
+  const remaining = alivePlayers(game).length;
+  if (!s.active) {
+    if (game.elapsed > MIN_SHRINK_ELAPSED &&
+        (game.elapsed > SHRINK_START_TIME || remaining <= SHRINK_START_MAX_PLAYERS)) {
+      s.active = true;
+      s.timer = SHRINK_INTERVAL;
+      s.ringRemaining = ringTiles(s.ring);
+    }
+    return;
+  }
+  s.timer -= dt * 1000;
+  if (!s.warning && s.timer <= SHRINK_WARN_TIME) {
+    s.warning = true;
+    // Collapse only a random chunk of what's left of this ring each cycle — creates
+    // scattered, unpredictable danger tiles rather than the whole border vanishing at once.
+    const pool = s.ringRemaining.slice();
+    shuffle(pool);
+    const count = Math.max(1, Math.round(pool.length * 0.5));
+    s.warnTiles = pool.slice(0, count);
+    if (game.players.find(p => p.isHuman && p.alive)) AudioSys.sfx.warn();
+  }
+  if (s.timer <= 0) {
+    // collapse this cycle's random chunk into walls, kill anyone still standing on it
+    const tiles = s.warnTiles;
+    tiles.forEach(pos => {
+      if (!inBounds(pos.x, pos.y)) return;
+      game.grid[pos.y][pos.x] = { type: T_WALL };
+      game.players.forEach(p => {
+        if (!p.alive) return;
+        const g = gridOf(p.x, p.y);
+        if (g.x === pos.x && g.y === pos.y) killPlayer(game, p, null);
+      });
+    });
+    const collapsedKeys = new Set(tiles.map(p => p.x + ',' + p.y));
+    s.ringRemaining = s.ringRemaining.filter(p => !collapsedKeys.has(p.x + ',' + p.y));
+    s.warning = false;
+    s.warnTiles = [];
+    s.timer = SHRINK_INTERVAL;
+    game.shakeT = 0.4;
+
+    if (s.ringRemaining.length === 0) {
+      s.ring++;
+      s.ringRemaining = ringTiles(s.ring);
+      if (s.ringRemaining.length === 0) s.active = false; // fully collapsed
+    }
+  }
+}
+function ringTiles(ring) {
+  const tiles = [];
+  const x0 = ring, x1 = COLS - 1 - ring, y0 = ring, y1 = ROWS - 1 - ring;
+  if (x0 > x1 || y0 > y1) return tiles;
+  for (let x = x0; x <= x1; x++) { tiles.push({ x, y: y0 }); if (y1 !== y0) tiles.push({ x, y: y1 }); }
+  for (let y = y0 + 1; y < y1; y++) { tiles.push({ x: x0, y }); if (x1 !== x0) tiles.push({ x: x1, y }); }
+  return tiles;
+}
+
+/* ---------------------------------------------------------------------- *
+ * Main loop / update
+ * ---------------------------------------------------------------------- */
+function updateGame(game, dt, input) {
+  if (game.state === 'countdown') {
+    const prev = Math.ceil(game.countdown);
+    game.countdown -= dt;
+    const now = Math.ceil(game.countdown);
+    if (now !== prev && now >= 0) AudioSys.sfx.countdown();
+    if (game.countdown <= 0) {
+      game.state = 'playing';
+      AudioSys.sfx.go();
+    }
+    return;
+  }
+  if (game.state !== 'playing') return;
+
+  game.elapsed += dt * 1000;
+  game.score = Math.floor(game.elapsed / 100) + (human(game) ? human(game).kills * 100 : 0);
+  if (game.shakeT > 0) game.shakeT -= dt;
+
+  const human_ = human(game);
+  if (human_ && human_.alive) {
+    let dx = 0, dy = 0;
+    if (input.left) dx -= 1;
+    if (input.right) dx += 1;
+    if (input.up) dy -= 1;
+    if (input.down) dy += 1;
+    if (dx !== 0 && dy !== 0) { dx *= 0.7071; dy *= 0.7071; }
+    if (dx !== 0 || dy !== 0) {
+      tryMove(game, human_, dx, dy, dt);
+      human_.moving = true;
+      human_.dir = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up');
+    } else {
+      human_.moving = false;
+    }
+    if (input.bombPressed) { placeBomb(game, human_); input.bombPressed = false; }
+  }
+
+  game.players.forEach(p => {
+    if (!p.alive || p.isHuman) return;
+    updateAI(game, p, dt);
+  });
+
+  game.players.forEach(p => {
+    if (!p.alive) return;
+    applyBeltAndWarp(game, p, dt);
+    checkItemPickup(game, p);
+    p.animT += dt;
+  });
+
+  // Bombs
+  game.bombs.forEach(b => { if (!b.exploded) b.timer -= dt * 1000; });
+  game.bombs.filter(b => !b.exploded && b.timer <= 0).forEach(b => explodeBomb(game, b));
+  game.bombs = game.bombs.filter(b => !b.exploded);
+
+  // Explosions fade
+  game.explosions.forEach(e => e.life -= dt * 1000);
+  game.explosions = game.explosions.filter(e => e.life > 0);
+
+  updateShrink(game, dt);
+
+  // camera follow (overview mode positions the camera itself, in drawGame)
+  if (human_ && game.cameraMode === 'follow') {
+    const targetX = human_.x, targetY = human_.y;
+    game.camera.x += (targetX - game.camera.x) * Math.min(1, dt * 6);
+    game.camera.y += (targetY - game.camera.y) * Math.min(1, dt * 6);
+  }
+
+  // End conditions
+  const remaining = alivePlayers(game);
+  if (remaining.length <= 1) {
+    const h = human(game);
+    if (h && h.alive) {
+      game.state = 'ended';
+      game.ended = { result: 'victory', place: 1, score: game.score + 500, kills: h.kills };
+      AudioSys.sfx.victory();
+    } else if (h && !h.alive) {
+      game.state = 'ended';
+      game.ended = { result: 'eliminated', place: h.place || remaining.length + 1, score: game.score, kills: h.kills };
+    } else if (remaining.length === 0) {
+      game.state = 'ended';
+      game.ended = { result: 'eliminated', place: PLAYER_COUNT, score: game.score, kills: 0 };
+    }
+  } else if (human_ && !human_.alive && game.state === 'playing') {
+    game.state = 'ended';
+    game.ended = { result: 'eliminated', place: human_.place, score: game.score, kills: human_.kills };
+  }
+}
+function human(game) { return game.players.find(p => p.isHuman); }
+
+/* ---------------------------------------------------------------------- *
+ * Rendering
+ * ---------------------------------------------------------------------- */
+const COLORS = {
+  floor1: '#1b1230',
+  floor2: '#1f1638',
+  wall: '#2d1f4a',
+  wallEdge: '#7c3aed',
+  block: '#3b2166',
+  blockEdge: '#a855f7',
+  belt: '#241a3f',
+  beltArrow: '#22d3ee',
+  warp: '#150c28',
+  warpRing: '#f472b6',
+};
+
+function drawGame(ctx, canvas, game) {
+  const w = canvas.width, h = canvas.height;
+  ctx.fillStyle = '#050308';
+  ctx.fillRect(0, 0, w, h);
+
+  if (game.cameraMode === 'overview') {
+    // fit the whole (smaller) arena in view — everyone stays visible at all times
+    const mapPxW = COLS * TILE, mapPxH = ROWS * TILE;
+    let fitZoom = Math.min(w / mapPxW, h / mapPxH) * 0.94;
+    fitZoom = Math.max(0.35, Math.min(fitZoom, 2.1));
+    game.camera.zoom = fitZoom;
+    game.camera.x = mapPxW / 2;
+    game.camera.y = mapPxH / 2;
+  }
+
+  const zoom = game.camera.zoom;
+  ctx.save();
+  let shakeX = 0, shakeY = 0;
+  if (game.shakeT > 0) {
+    shakeX = (Math.random() - 0.5) * 8 * game.shakeT;
+    shakeY = (Math.random() - 0.5) * 8 * game.shakeT;
+  }
+  ctx.translate(w / 2 + shakeX, h / 2 + shakeY);
+  ctx.scale(zoom, zoom);
+  ctx.translate(-game.camera.x, -game.camera.y);
+
+  const camGX = Math.floor(game.camera.x / TILE), camGY = Math.floor(game.camera.y / TILE);
+  const viewTilesX = Math.ceil(w / zoom / TILE / 2) + 2;
+  const viewTilesY = Math.ceil(h / zoom / TILE / 2) + 2;
+
+  for (let y = Math.max(0, camGY - viewTilesY); y <= Math.min(ROWS - 1, camGY + viewTilesY); y++) {
+    for (let x = Math.max(0, camGX - viewTilesX); x <= Math.min(COLS - 1, camGX + viewTilesX); x++) {
+      drawTile(ctx, game, x, y);
+    }
+  }
+
+  // items
+  game.items.forEach(it => drawItem(ctx, it));
+
+  // bombs — always drawn in full, regardless of owner or fog, so nobody's caught off guard
+  game.bombs.forEach(b => drawBomb(ctx, b));
+
+  // explosions
+  game.explosions.forEach(e => drawExplosion(ctx, e));
+
+  // players (sorted by y for pseudo-depth). In fog-of-war modes, bots outside the
+  // visibility radius are hidden; Clear Vision mode shows everyone at all times.
+  const h_ = human(game);
+  game.players
+    .slice()
+    .sort((a, b) => a.y - b.y)
+    .forEach(p => {
+      if (!p.alive && p.deathT > 1.1) return;
+      if (game.fog && h_ && !p.isHuman) {
+        const dd = Math.hypot(p.x - h_.x, p.y - h_.y);
+        if (dd > game.fogRadius * 1.05) return;
+      }
+      drawPlayer(ctx, p, game);
+    });
+
+  // shrink warning telegraph
+  if (game.shrink.warning) {
+    ctx.fillStyle = 'rgba(239,68,68,0.35)';
+    game.shrink.warnTiles.forEach(pos => {
+      if (!inBounds(pos.x, pos.y)) return;
+      ctx.fillRect(pos.x * TILE, pos.y * TILE, TILE, TILE);
+    });
+  }
+
+  ctx.restore();
+
+  // Fog of war vignette (screen space) — skipped entirely in Clear Vision mode
+  if (game.fog) {
+  const grad = ctx.createRadialGradient(w / 2, h / 2, game.fogRadius * zoom * 0.35, w / 2, h / 2, game.fogRadius * zoom);
+  grad.addColorStop(0, 'rgba(3,2,8,0)');
+  grad.addColorStop(0.72, 'rgba(3,2,8,0.55)');
+  grad.addColorStop(1, 'rgba(2,1,6,0.97)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, w, h);
+  }
+}
+
+function drawTile(ctx, game, x, y) {
+  const tile = game.grid[y][x];
+  const px = x * TILE, py = y * TILE;
+  ctx.fillStyle = (x + y) % 2 === 0 ? COLORS.floor1 : COLORS.floor2;
+  ctx.fillRect(px, py, TILE, TILE);
+
+  if (tile.type === T_WALL) {
+    ctx.fillStyle = COLORS.wall;
+    ctx.fillRect(px + 1, py + 1, TILE - 2, TILE - 2);
+    ctx.strokeStyle = COLORS.wallEdge;
+    ctx.lineWidth = 1.5;
+    ctx.globalAlpha = 0.55;
+    ctx.strokeRect(px + 2.5, py + 2.5, TILE - 5, TILE - 5);
+    ctx.globalAlpha = 1;
+  } else if (tile.type === T_BLOCK) {
+    ctx.fillStyle = COLORS.block;
+    ctx.fillRect(px + 2, py + 2, TILE - 4, TILE - 4);
+    ctx.strokeStyle = COLORS.blockEdge;
+    ctx.lineWidth = 1.4;
+    ctx.strokeRect(px + 4, py + 4, TILE - 8, TILE - 8);
+  } else if (tile.type === T_BELT) {
+    ctx.fillStyle = COLORS.belt;
+    ctx.fillRect(px + 1, py + 1, TILE - 2, TILE - 2);
+    ctx.fillStyle = COLORS.beltArrow;
+    ctx.globalAlpha = 0.8;
+    drawArrow(ctx, px + TILE / 2, py + TILE / 2, tile.dir, 9);
+    ctx.globalAlpha = 1;
+  } else if (tile.type === T_WARP) {
+    ctx.fillStyle = COLORS.warp;
+    ctx.fillRect(px + 1, py + 1, TILE - 2, TILE - 2);
+    const t = (performance.now() / 300 + tile.pair * 2) % (Math.PI * 2);
+    ctx.strokeStyle = COLORS.warpRing;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.ellipse(px + TILE / 2, py + TILE / 2, 10 + Math.sin(t) * 2, 6, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.strokeStyle = '#22d3ee';
+    ctx.globalAlpha = 0.7;
+    ctx.ellipse(px + TILE / 2, py + TILE / 2, 5, 10 + Math.cos(t) * 2, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+}
+function drawArrow(ctx, cx, cy, dir, size) {
+  ctx.save();
+  ctx.translate(cx, cy);
+  const rot = { up: -Math.PI / 2, down: Math.PI / 2, left: Math.PI, right: 0 }[dir];
+  ctx.rotate(rot);
+  ctx.beginPath();
+  ctx.moveTo(size, 0);
+  ctx.lineTo(-size * 0.5, -size * 0.7);
+  ctx.lineTo(-size * 0.5, size * 0.7);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawItem(ctx, it) {
+  const px = it.x * TILE + TILE / 2, py = it.y * TILE + TILE / 2;
+  const bob = Math.sin(performance.now() / 250 + it.x) * 2;
+  ctx.save();
+  ctx.translate(px, py + bob);
+  ctx.fillStyle = it.type === 'range' ? '#f472b6' : '#38bdf8';
+  ctx.shadowColor = ctx.fillStyle;
+  ctx.shadowBlur = 10;
+  ctx.beginPath();
+  ctx.arc(0, 0, 8, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = '#0a0614';
+  ctx.font = 'bold 9px monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(it.type === 'range' ? '+R' : '+B', 0, 1);
+  ctx.restore();
+}
+
+function drawBomb(ctx, b) {
+  const px = b.gx * TILE + TILE / 2, py = b.gy * TILE + TILE / 2;
+  const fusePct = 1 - Math.max(0, Math.min(1, b.timer / BOMB_FUSE)); // 0 = just placed, 1 = about to explode
+  const pulseSpeed = 6 + fusePct * 14; // pulses faster as fuse runs out
+  const pulse = 1 + Math.sin(performance.now() / 1000 * pulseSpeed) * (0.06 + fusePct * 0.1);
+  const bodyColor = fusePct < 0.55 ? '#7c3aed' : (fusePct < 0.82 ? '#facc15' : '#ef4444');
+
+  ctx.save();
+  ctx.translate(px, py);
+
+  // shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.4)';
+  ctx.beginPath();
+  ctx.ellipse(0, 12, 12, 4, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // glow
+  ctx.save();
+  ctx.globalAlpha = 0.5;
+  ctx.shadowColor = bodyColor;
+  ctx.shadowBlur = 16 * pulse;
+  ctx.fillStyle = bodyColor;
+  ctx.beginPath();
+  ctx.arc(0, 0, 13 * pulse, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  // body
+  ctx.fillStyle = '#150c28';
+  ctx.beginPath();
+  ctx.arc(0, 1, 12.5 * pulse, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.lineWidth = 2.4;
+  ctx.strokeStyle = bodyColor;
+  ctx.beginPath();
+  ctx.arc(0, 1, 12.5 * pulse, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // highlight
+  ctx.fillStyle = 'rgba(255,255,255,0.25)';
+  ctx.beginPath();
+  ctx.arc(-4, -3, 3.2, 0, Math.PI * 2);
+  ctx.fill();
+
+  // fuse spark
+  ctx.strokeStyle = bodyColor;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(0, -11 * pulse);
+  ctx.lineTo(3, -17 * pulse);
+  ctx.stroke();
+  ctx.fillStyle = fusePct < 0.82 ? '#22d3ee' : '#fff7ff';
+  ctx.beginPath();
+  ctx.arc(3, -17 * pulse, 2.4, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function drawExplosion(ctx, e) {
+  const px = e.x * TILE + TILE / 2, py = e.y * TILE + TILE / 2;
+  const p = e.life / e.maxLife;
+  ctx.save();
+  ctx.translate(px, py);
+  ctx.globalAlpha = Math.min(1, p * 1.4);
+  const outerR = TILE * 0.62 * (1.15 - p * 0.35);
+  const grad = ctx.createRadialGradient(0, 0, 2, 0, 0, outerR);
+  grad.addColorStop(0, '#fff7ff');
+  grad.addColorStop(0.4, '#e879f9');
+  grad.addColorStop(0.75, '#9333ea');
+  grad.addColorStop(1, 'rgba(147,51,234,0)');
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(0, 0, outerR, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawPlayer(ctx, p, game) {
+  const px = p.x, py = p.y;
+  ctx.save();
+  ctx.translate(px, py);
+  if (!p.alive) {
+    p.deathT += 1 / 60;
+    ctx.globalAlpha = Math.max(0, 1 - p.deathT * 0.9);
+    ctx.scale(1 + p.deathT * 0.4, 1 - p.deathT * 0.5);
+  }
+  const bob = p.moving ? Math.sin(p.animT * 12) * 2 : 0;
+
+  // glow ring for human
+  if (p.isHuman) {
+    ctx.save();
+    ctx.globalAlpha = 0.3;
+    ctx.strokeStyle = p.color;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(0, 12, 12, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.45)';
+  ctx.beginPath();
+  ctx.ellipse(0, 14, 11, 4, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // body (cute pixel-ish blob) — dark purple base + neon accent
+  ctx.translate(0, bob);
+  ctx.fillStyle = '#150c28';
+  roundRect(ctx, -12, -14, 24, 24, 7);
+  ctx.fill();
+  ctx.fillStyle = p.color;
+  roundRect(ctx, -10, -12, 20, 20, 6);
+  ctx.fill();
+
+  // eyes (direction-aware)
+  ctx.fillStyle = '#fdf4ff';
+  const eyeOffsets = {
+    down:  [[-4, -2], [4, -2]],
+    up:    [[-4, -6], [4, -6]],
+    left:  [[-6, -4], [-1, -4]],
+    right: [[1, -4], [6, -4]],
+  }[p.dir] || [[-4, -2], [4, -2]];
+  eyeOffsets.forEach(([ex, ey]) => {
+    ctx.beginPath();
+    ctx.arc(ex, ey, 2.1, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  ctx.fillStyle = '#1a0b2e';
+  eyeOffsets.forEach(([ex, ey]) => {
+    ctx.beginPath();
+    ctx.arc(ex, ey, 1, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  // antenna
+  ctx.strokeStyle = p.color;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(0, -12);
+  ctx.lineTo(0, -18);
+  ctx.stroke();
+  ctx.fillStyle = '#22d3ee';
+  ctx.beginPath();
+  ctx.arc(0, -19, 2.2, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.restore();
+
+  // name tag
+  if (p.alive) {
+    ctx.save();
+    ctx.translate(px, py);
+    ctx.font = '9px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(255,255,255,0.75)';
+    ctx.fillText(p.name, 0, -26);
+    ctx.restore();
+  }
+}
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+/* ========================================================================
+ * APP / UI WIRING
+ * ===================================================================== */
+(function () {
+  const $ = (sel) => document.querySelector(sel);
+  const screens = {
+    menu: $('#screen-menu'),
+    howto: $('#screen-howto'),
+    game: $('#screen-game'),
+    over: $('#screen-over'),
+    setup: $('#screen-setup'),
+  };
+  function showScreen(name) {
+    Object.values(screens).forEach(s => s.classList.remove('active'));
+    screens[name].classList.add('active');
+  }
+
+  const canvas = $('#gameCanvas');
+  const ctx = canvas.getContext('2d');
+  const bgCanvas = $('#bgCanvas');
+  const bgCtx = bgCanvas.getContext('2d');
+
+  let game = null;
+  const input = { up: false, down: false, left: false, right: false, bombPressed: false };
+  const HS_KEY = 'neonBlastHighScore';
+  function getHighScore() { return parseInt(localStorage.getItem(HS_KEY) || '0', 10); }
+  function setHighScore(v) { localStorage.setItem(HS_KEY, String(v)); }
+
+  /* ---------------- Language ---------------- */
+  function setLang(l) {
+    LANG = l;
+    applyI18n();
+    $('#langBtn').textContent = LANG === 'th' ? 'EN' : 'ไทย';
+    $('#highscoreMenu').textContent = t('highscore') + ': ' + getHighScore();
+    refreshMusicLabel();
+    if (typeof updateModeDesc === 'function') updateModeDesc();
+  }
+  $('#langBtn').addEventListener('click', () => setLang(LANG === 'th' ? 'en' : 'th'));
+
+  /* ---------------- Music toggle ---------------- */
+  function refreshMusicLabel() {
+    $('#musicStateLabel').textContent = AudioSys.isMusicOn() ? t('musicOn') : t('musicOff');
+  }
+  $('#musicBtn').addEventListener('click', () => {
+    AudioSys.unlock();
+    AudioSys.toggleMusic();
+    refreshMusicLabel();
+  });
+
+  /* ---------------- Menu nav / battle setup ---------------- */
+  let selMode = 'royale';
+  let selDiff = 'normal';
+
+  $('#startBtn').addEventListener('click', () => {
+    AudioSys.unlock();
+    showScreen('setup');
+  });
+  $('#howtoBtn').addEventListener('click', () => showScreen('howto'));
+  $('#howtoBackBtn').addEventListener('click', () => showScreen('menu'));
+  $('#setupBackBtn').addEventListener('click', () => showScreen('menu'));
+  $('#restartBtn').addEventListener('click', () => showScreen('setup'));
+  $('#menuBtn').addEventListener('click', () => { showScreen('menu'); resizeBgCanvas(); });
+
+  function wireChipGroup(selector, onPick) {
+    document.querySelectorAll(selector).forEach(chip => {
+      chip.addEventListener('click', () => {
+        document.querySelectorAll(selector).forEach(c => c.classList.remove('selected'));
+        chip.classList.add('selected');
+        onPick(chip.dataset.value);
+      });
+    });
+  }
+  wireChipGroup('.chip-mode', (v) => { selMode = v; updateModeDesc(); });
+  wireChipGroup('.chip-diff', (v) => { selDiff = v; });
+
+  function updateModeDesc() {
+    $('#modeDesc').textContent = t(selMode === 'royale' ? 'modeRoyaleDesc' : 'modeClearDesc');
+  }
+
+  $('#setupStartBtn').addEventListener('click', () => {
+    AudioSys.unlock();
+    startMatch({ mode: selMode, difficulty: selDiff });
+  });
+
+  /* ---------------- Floating geometric background (menu) ---------------- */
+  let shapes = [];
+  let mouseTarget = { x: 0, y: 0 };
+  function resizeBgCanvas() {
+    bgCanvas.width = bgCanvas.clientWidth * devicePixelRatio;
+    bgCanvas.height = bgCanvas.clientHeight * devicePixelRatio;
+  }
+  function initShapes() {
+    shapes = [];
+    const n = 16;
+    for (let i = 0; i < n; i++) {
+      shapes.push({
+        type: Math.random() < 0.5 ? 'cube' : 'sphere',
+        x: Math.random(), y: Math.random(),
+        z: 0.4 + Math.random() * 0.9,
+        size: 18 + Math.random() * 46,
+        rotX: Math.random() * Math.PI * 2, rotY: Math.random() * Math.PI * 2,
+        speedX: (Math.random() - 0.5) * 0.6, speedY: (Math.random() - 0.5) * 0.6,
+        driftX: (Math.random() - 0.5) * 0.00012, driftY: (Math.random() - 0.5) * 0.00012,
+        hue: Math.random() < 0.5 ? '#a855f7' : (Math.random() < 0.5 ? '#22d3ee' : '#f472b6'),
+      });
+    }
+  }
+  window.addEventListener('mousemove', (e) => {
+    mouseTarget.x = (e.clientX / window.innerWidth - 0.5) * 2;
+    mouseTarget.y = (e.clientY / window.innerHeight - 0.5) * 2;
+  });
+  window.addEventListener('touchmove', (e) => {
+    if (!e.touches[0]) return;
+    mouseTarget.x = (e.touches[0].clientX / window.innerWidth - 0.5) * 2;
+    mouseTarget.y = (e.touches[0].clientY / window.innerHeight - 0.5) * 2;
+  }, { passive: true });
+
+  let bgMouse = { x: 0, y: 0 };
+  function drawBg() {
+    if (!screens.menu.classList.contains('active') && !screens.howto.classList.contains('active')) {
+      requestAnimationFrame(drawBg);
+      return;
+    }
+    bgMouse.x += (mouseTarget.x - bgMouse.x) * 0.04;
+    bgMouse.y += (mouseTarget.y - bgMouse.y) * 0.04;
+    const w = bgCanvas.width, h = bgCanvas.height;
+    bgCtx.clearRect(0, 0, w, h);
+    shapes.forEach(s => {
+      s.rotX += 0.004 + s.speedX * 0.01;
+      s.rotY += 0.006 + s.speedY * 0.01;
+      s.x += s.driftX + bgMouse.x * 0.00008 * s.z;
+      s.y += s.driftY + bgMouse.y * 0.00008 * s.z;
+      if (s.x < -0.1) s.x = 1.1; if (s.x > 1.1) s.x = -0.1;
+      if (s.y < -0.1) s.y = 1.1; if (s.y > 1.1) s.y = -0.1;
+      const cx = s.x * w, cy = s.y * h;
+      const sz = s.size * (w / 1000) * s.z;
+      bgCtx.save();
+      bgCtx.translate(cx, cy);
+      bgCtx.globalAlpha = 0.16 + s.z * 0.16;
+      bgCtx.strokeStyle = s.hue;
+      bgCtx.lineWidth = 1.4;
+      if (s.type === 'cube') {
+        drawCube(bgCtx, sz, s.rotX, s.rotY);
+      } else {
+        drawSphere(bgCtx, sz, s.rotX);
+      }
+      bgCtx.restore();
+    });
+    requestAnimationFrame(drawBg);
+  }
+  function drawCube(c, size, rx, ry) {
+    const pts3d = [
+      [-1,-1,-1],[1,-1,-1],[1,1,-1],[-1,1,-1],
+      [-1,-1,1],[1,-1,1],[1,1,1],[-1,1,1]
+    ];
+    const proj = pts3d.map(([x,y,z]) => {
+      let y1 = y*Math.cos(rx) - z*Math.sin(rx), z1 = y*Math.sin(rx) + z*Math.cos(rx);
+      let x2 = x*Math.cos(ry) + z1*Math.sin(ry);
+      return [x2 * size / 2, y1 * size / 2];
+    });
+    const edges = [[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
+    c.beginPath();
+    edges.forEach(([a,b]) => { c.moveTo(proj[a][0], proj[a][1]); c.lineTo(proj[b][0], proj[b][1]); });
+    c.stroke();
+  }
+  function drawSphere(c, size, rot) {
+    c.beginPath();
+    c.arc(0, 0, size / 2, 0, Math.PI * 2);
+    c.stroke();
+    for (let i = 1; i < 3; i++) {
+      const ry = Math.abs(Math.sin(rot + i)) * (size / 2);
+      c.beginPath();
+      c.ellipse(0, 0, size / 2, ry, 0, 0, Math.PI * 2);
+      c.stroke();
+    }
+  }
+
+  /* ---------------- Input: keyboard ---------------- */
+  const KEYMAP = {
+    ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right',
+    KeyW: 'up', KeyS: 'down', KeyA: 'left', KeyD: 'right',
+  };
+  window.addEventListener('keydown', (e) => {
+    if (KEYMAP[e.code]) { input[KEYMAP[e.code]] = true; e.preventDefault(); }
+    if (e.code === 'Space') { input.bombPressed = true; e.preventDefault(); }
+  });
+  window.addEventListener('keyup', (e) => {
+    if (KEYMAP[e.code]) { input[KEYMAP[e.code]] = false; }
+  });
+
+  /* ---------------- Input: touch D-pad ---------------- */
+  function bindHold(el, key) {
+    const on = (ev) => { ev.preventDefault(); input[key] = true; };
+    const off = (ev) => { ev.preventDefault(); input[key] = false; };
+    el.addEventListener('touchstart', on, { passive: false });
+    el.addEventListener('touchend', off, { passive: false });
+    el.addEventListener('touchcancel', off, { passive: false });
+    el.addEventListener('mousedown', on);
+    el.addEventListener('mouseup', off);
+    el.addEventListener('mouseleave', off);
+  }
+  bindHold($('#padUp'), 'up');
+  bindHold($('#padDown'), 'down');
+  bindHold($('#padLeft'), 'left');
+  bindHold($('#padRight'), 'right');
+  $('#padBomb').addEventListener('touchstart', (e) => { e.preventDefault(); input.bombPressed = true; }, { passive: false });
+  $('#padBomb').addEventListener('mousedown', (e) => { input.bombPressed = true; });
+
+  /* ---------------- Match lifecycle ---------------- */
+  function startMatch(config) {
+    game = newGame(config || { mode: selMode, difficulty: selDiff });
+    showScreen('game');
+    resizeCanvas();
+    refreshMusicLabel();
+    lastTime = performance.now();
+    requestAnimationFrame(loop);
+  }
+
+  function endMatchUI() {
+    const ended = game.ended;
+    const hs = getHighScore();
+    if (ended.score > hs) setHighScore(ended.score);
+    $('#overTitle').textContent = ended.result === 'victory' ? t('victory') : t('eliminated');
+    $('#overTitle').className = ended.result === 'victory' ? 'over-title win' : 'over-title lose';
+    $('#overScore').textContent = ended.score;
+    $('#overHighScore').textContent = Math.max(ended.score, hs);
+    $('#overPlace').textContent = t('place') + ': ' + ended.place + ' / ' + PLAYER_COUNT;
+    $('#overKills').textContent = t('kills') + ': ' + ended.kills;
+    showScreen('over');
+  }
+
+  /* ---------------- Resize / responsive canvas ---------------- */
+  function resizeCanvas() {
+    const rect = canvas.parentElement.getBoundingClientRect();
+    const dpr = Math.min(devicePixelRatio || 1, 2);
+    canvas.width = Math.round(rect.width * dpr);
+    canvas.height = Math.round(rect.height * dpr);
+    canvas.style.width = rect.width + 'px';
+    canvas.style.height = rect.height + 'px';
+  }
+  window.addEventListener('resize', () => { resizeCanvas(); resizeBgCanvas(); });
+
+  /* ---------------- HUD ---------------- */
+  function updateHUD() {
+    const remaining = alivePlayers(game).length;
+    $('#hudRemaining').textContent = t('remaining') + ': ' + remaining + ' / ' + PLAYER_COUNT;
+    const h = human(game);
+    $('#hudScore').textContent = t('score') + ': ' + game.score;
+    $('#hudHighScore').textContent = t('highscore') + ': ' + getHighScore();
+    const countdownEl = $('#countdownOverlay');
+    if (game.state === 'countdown') {
+      countdownEl.style.display = 'flex';
+      const n = Math.ceil(game.countdown);
+      countdownEl.textContent = n > 0 ? String(n) : t('go');
+    } else {
+      countdownEl.style.display = 'none';
+    }
+    $('#shrinkWarn').style.display = (game.shrink.warning) ? 'block' : 'none';
+    $('#shrinkWarn').textContent = t('shrinkWarn');
+  }
+
+  /* ---------------- Main loop ---------------- */
+  let lastTime = 0;
+  function loop(now) {
+    if (!game) return;
+    const dt = Math.min(0.05, (now - lastTime) / 1000);
+    lastTime = now;
+    updateGame(game, dt, input);
+    drawGame(ctx, canvas, game);
+    updateHUD();
+    if (game.state === 'ended') {
+      endMatchUI();
+      return;
+    }
+    requestAnimationFrame(loop);
+  }
+
+  /* ---------------- Boot ---------------- */
+  function boot() {
+    setLang('th');
+    resizeBgCanvas();
+    initShapes();
+    requestAnimationFrame(drawBg);
+    updateModeDesc();
+  }
+  window.addEventListener('DOMContentLoaded', boot);
+})();
+
+</script>
+</body>
+</html>
